@@ -1,5 +1,5 @@
 // === ตั้งค่า URL ของ Web App (Apps Script) ===
-const PRODUCTS_URL = "https://script.google.com/macros/s/AKfycbzudRcJ8S9B-l_J-mX8F1odeaHW5kRigkuD7wtaj8hom8IlbBPdWYxoyO4vaK_0He12aQ/exec";
+const PRODUCTS_URL = "https://script.google.com/macros/s/AKfycbysfEp0VkUnNIjPWSlkJU-YpIA6lnl8XK6pXl3TE2lFsy2-qqsJwuaItIpX9JYn6BT5wg/exec";
 const SALES_URL = PRODUCTS_URL;
 
 // ใส่ URL/พาธของรูป QR คุณ (ตัวอย่างชื่อไฟล์ที่คุณส่งมา)
@@ -28,6 +28,159 @@ const subtotalEl = el('subtotal');
 const cashEl     = el('cash');
 const changeEl   = el('change');
 
+
+// คลิกแถว = ลบ, คลิกปุ่มดินสอ = แก้ไข
+if (cartBody) {
+  cartBody.addEventListener('click', (e) => {
+    const editBtn = e.target.closest('.edit-btn');
+    const tr = e.target.closest('tr');
+    if (!tr) return;
+
+    // ถ้าเป็นปุ่มแก้ไข → เปิด modal แก้ไข
+    if (editBtn) {
+      const idx = Number(editBtn.dataset.idx);
+      if (!Number.isNaN(idx)) openEditModal(idx);
+      return;
+    }
+
+    // ถ้าคลิกในส่วนควบคุมจำนวน/ปุ่ม ไม่ให้ลบ
+    if (e.target.closest('.qty') || e.target.closest('button')) return;
+
+    // ไม่ใช่ปุ่ม → ถือว่าเป็นการคลิกแถว → ลบรายการ
+    const rowIndex = [...cartBody.children].indexOf(tr);
+    if (rowIndex > -1) removeLine(rowIndex);
+  });
+}
+
+function focusCash(fillIfNeeded = true) {
+  const cash = document.getElementById('cash');
+  if (!cash) return;
+  cash.focus();
+  cash.select?.();
+
+  if (fillIfNeeded) {
+    const sub = getSubtotal?.() ?? 0;
+    const cur = Number(cash.value || 0);
+    // ถ้ายังว่างหรือใส่น้อยกว่า -> ใส่ยอดรวมให้เลย
+    if (!cur || cur < sub) {
+      cash.value = String(sub);
+      calcChange?.();
+    }
+  }
+}
+
+
+function openEditModal(idx){
+  const line = cart[idx];
+  if (!line) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'np-overlay';  // ใช้สไตล์ overlay ใบเสร็จเดิม (เราทำเป็นโทนสว่างแล้ว)
+  overlay.style.display = 'flex';
+
+  const modal = document.createElement('div');
+  modal.innerHTML = `
+    <h2>แก้ไขรายการ</h2>
+    <div style="margin-bottom:8px;color:#475569">รหัส: <b>${line.code ?? '-'}</b></div>
+    <label style="display:block;margin-bottom:8px;">
+      <span>ชื่อสินค้า</span>
+      <input id="ed-name" type="text" value="${line.name ?? ''}">
+    </label>
+    <label style="display:block;margin-bottom:8px;">
+      <span>ราคา (บาท)</span>
+      <input id="ed-price" type="number" min="0" step="1" value="${Number(line.price)||0}">
+    </label>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;">
+      <button id="ed-cancel">ยกเลิก</button>
+      <button class="btn-save" id="ed-save">บันทึก</button>
+    </div>
+  `;
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  const close = ()=> overlay.remove();
+  modal.querySelector('#ed-cancel')?.addEventListener('click', close);
+
+  modal.querySelector('#ed-save')?.addEventListener('click', () => {
+  const name  = String(modal.querySelector('#ed-name').value || '').trim();
+  const price = Math.max(0, Number(modal.querySelector('#ed-price').value || 0));
+
+  // อัปเดตในตะกร้าทันที (ลื่นไหล)
+  cart[idx].name  = name || cart[idx].name;
+  cart[idx].price = price;
+  renderCart();
+
+  // ปิด modal **ทันที** (ไม่ await network)
+  close();
+
+  // ยิงบันทึกขึ้นชีตแบบ background
+  if (line.code) {
+    updateProductOnSheet(line.code, name, price)
+      .then(ok => {
+        if (ok) toast('บันทึกขึ้นชีตแล้ว');
+        else    toast('บันทึกขึ้นชีตไม่สำเร็จ (แก้ในตะกร้าแล้ว)');
+      })
+      .catch(() => toast('บันทึกขึ้นชีตไม่สำเร็จ (แก้ในตะกร้าแล้ว)'));
+  } else {
+    toast('อัปเดตรายการในบิลแล้ว'); // สินค้าที่ไม่มี code
+  }
+});
+
+}
+
+// อัปเดตสินค้าบน Google Sheet ผ่าน Apps Script
+async function updateProductOnSheet(code, name, price){
+  const payload = {
+    action: 'updateProduct',
+    code: String(code),
+    name: String(name || ''),
+    price: Number(price) || 0
+  };
+  const body = JSON.stringify(payload);
+
+  try {
+    // simple request: ไม่มี preflight
+    const res = await fetch(PRODUCTS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body
+    });
+
+    // ถ้า Apps Script ตอบ JSON ปกติ จะอ่านได้เลย
+    if (res.ok) {
+      // บางกรณี Apps Script ตอบเป็น text → ลอง parse อย่างยืดหยุ่น
+      const txt = await res.text();
+      try {
+        const json = JSON.parse(txt);
+        return json?.ok !== false; // ok:true หรือไม่มี ok ก็ถือว่าสำเร็จ
+      } catch {
+        // ไม่ใช่ JSON ก็ถือว่าเรียกถึงปลายทางแล้ว
+        return true;
+      }
+    }
+  } catch (e) {
+    console.error('updateProductOnSheet error (simple request)', e);
+  }
+
+  // fallback สุดท้าย: ยิงแบบ no-cors (จะไม่รู้ผล แต่ส่งถึงปลายทาง)
+  try {
+    await fetch(PRODUCTS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body
+    });
+    return true;
+  } catch (e) {
+    console.error('updateProductOnSheet error (no-cors fallback)', e);
+    return false;
+  }
+}
+
+
+
+
+
    
 // === Live Thai clock ===
 // === Live Thai clock (time only) ===
@@ -38,17 +191,17 @@ function startLiveClock() {
   const fmt = new Intl.DateTimeFormat('th-TH', {
     hour: '2-digit',
     minute: '2-digit',
-    second: '2-digit',
     hour12: false
   });
 
   const tick = () => {
-    el.textContent = fmt.format(new Date()); // แสดงเฉพาะ HH:MM:SS
+    el.textContent = fmt.format(new Date()); // แสดงเฉพาะ HH:MM
   };
 
   tick();
-  setInterval(tick, 1000);
+  setInterval(tick, 1000); // ยังอัปเดตทุกวิ แต่ไม่มีวินาที
 }
+
 
 // ===== QR ใต้ตะกร้า: โชว์เมื่อโฟกัสช่องรับเงิน =====
 const qrWrap   = document.getElementById('qr-pay-wrap');
@@ -134,6 +287,41 @@ if (_renderCart_orig) {
 
 
 document.addEventListener('DOMContentLoaded', startLiveClock);
+
+
+// ===== Global numpad shortcuts (ไม่ให้พิมพ์ . และ + ลง input) =====
+(function setupGlobalNumpadShortcuts(){
+  const scan = document.getElementById('scan-input');
+
+  function focusScan() {
+    if (!scan) return;
+    scan.focus();
+    // ถ้าอยากให้พร้อมสแกนทับค่าเดิมให้ select ด้วย
+    scan.select?.();
+  }
+
+  document.addEventListener('keydown', (e) => {
+    // กันค้าง
+    if (e.repeat) return;
+
+    // Numpad .
+    if (e.code === 'NumpadDecimal') {
+      e.preventDefault();   // ❗️ห้ามพิมพ์ .
+      focusScan();
+      return;
+    }
+
+    // Numpad +
+  // Numpad +  = โฟกัสช่องรับเงิน (ไม่เพิ่มจำนวนสินค้า)
+if (e.code === 'NumpadAdd') {
+  e.preventDefault();
+  focusCash(true);
+  return;
+}
+
+  });
+})();
+
 
 
 document.addEventListener('DOMContentLoaded', startLiveClock);
@@ -271,31 +459,35 @@ function addToCartByPrice(price) {
 async function addToCartByCode(code) {
   const key = String(code ?? '').trim();
   if (!key) { toast('กรุณาใส่รหัสสินค้า'); return; }
-  if (/^0+$/.test(key)) { return; } // กันกรณี 0/0000
+  // กัน "0" หรือ "000" ถูกส่งมาถึงฟังก์ชันนี้
+  if (!key || /^0+$/.test(key)) { return; }
 
-  // 1) ลองหาในแคชก่อน
-  const item = productMap.get(key);
+  // มีในแคช → ใส่/บวก แล้วจำแถว
+  let item = productMap.get(key);
   if (item && item.code) {
     let idx = findCartIndexByCode(item.code);
-    if (idx > -1) { cart[idx].qty += 1; }
-    else { cart.push({ code: item.code, name: item.name, price: Number(item.price)||0, qty: 1 }); idx = cart.length - 1; }
+    if (idx > -1) {
+      cart[idx].qty += 1;
+    } else {
+      cart.push({ code: item.code, name: item.name, price: Number(item.price)||0, qty: 1 });
+      idx = cart.length - 1;
+    }
+
     moveLineToFront(idx);
     lastAddedKey = makeLineKey(cart[0]);
-    renderCart();
-    speakThai(`${item.price} บาท`);
+
+    // lastAddedKey = makeLineKey(cart[idx]);
+    const qtyNow = Number(cart[0].qty) || 0;
+    renderCart(); speakThai(`${item.price} บาท`);
     if (typeof animateAddToCartVisual === 'function') animateAddToCartVisual(`+1`);
     return;
   }
 
-  // 2) หาในชีต (มีตัวจับเวลา fallback เปิด modal)
+  // หาในชีต แต่ถ้าช้ากว่า FALLOUT_MS ให้เปิดป๊อปอัป
   const FALLOUT_MS = 150;
   const ctrl = new AbortController();
   let opened = false;
-  const openTimer = setTimeout(() => {
-    opened = true;
-    try { ctrl.abort(); } catch(_) {}
-    try { speakThai('ไม่มี'); } catch(_) {}
-    toast('ไม่มี');
+  const openTimer = setTimeout(() => { opened = true; try{ctrl.abort();}catch(_){}
     openCreateProductModal(key);
   }, FALLOUT_MS);
 
@@ -310,27 +502,22 @@ async function addToCartByCode(code) {
           let idx = findCartIndexByCode(data.code);
           if (idx > -1) cart[idx].qty += 1;
           else { cart.push({ code: data.code, name: data.name, price: Number(data.price)||0, qty: 1 }); idx = cart.length - 1; }
+
           moveLineToFront(idx);
           lastAddedKey = makeLineKey(cart[0]);
-          renderCart();
-          speakThai(`${data.price} บาท`);
+
+          // lastAddedKey = makeLineKey(cart[idx]);
+          renderCart(); speakThai(`${data.price} บาท`);
           if (typeof animateAddToCartVisual === 'function') animateAddToCartVisual(`+1`);
           return;
         }
       }
     }
-  } catch(_) { /* ให้ fallback จัดการต่อ */ }
+  } catch(_) { /* เงียบไว้ ให้ fallback จัดการ */ }
 
-  // 3) ถ้ายังไม่เปิด modal ให้เปิดตอนนี้
-  if (!opened) {
-    clearTimeout(openTimer);
-    try { speakThai('ไม่มี'); } catch(_) {}
-    toast('ไม่มี');
-    openCreateProductModal(key);
-  }
+  // ไม่พบ → เปิดป๊อปอัป (ถ้ายัง)
+  if (!opened) { clearTimeout(openTimer); openCreateProductModal(key); }
 }
-
-
 
 
 
@@ -440,21 +627,32 @@ function renderCart() {
     totalItems += it.qty;
 
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${it.code ?? '-'}</td>
-      <td>${it.name}</td>
-      <td class="num">${format(it.price)}</td>
-      <td class="num">
-        <div class="qty">
-          <button onclick="changeQty(${idx}, -1)">-</button>
-          <span>${it.qty}</span>
-          <button onclick="changeQty(${idx}, 1)">+</button>
-        </div>
-      </td>
-      <td class="num">${format(it.price * it.qty)}</td>
-      <td><button class="danger" onclick="removeLine(${idx})">ลบ</button></td>
-    `;
-    cartBody.appendChild(tr);
+tr.innerHTML = `
+  <td>${it.code ?? '-'}</td>
+  <td>${it.name}</td>
+  <td class="num">${format(it.price)}</td>
+  <td class="num">
+    <div class="qty">
+      <button onclick="changeQty(${idx}, -1)">-</button>
+      <span>${it.qty}</span>
+      <button onclick="changeQty(${idx}, 1)">+</button>
+    </div>
+  </td>
+  <td class="num">${format(it.price * it.qty)}</td>
+
+  <!-- ปุ่มแก้ไข (ไอคอนดินสอ) -->
+  <td>
+    <button class="icon-btn edit-btn" data-idx="${idx}" title="แก้ไขรายการ">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 
+                 7.04a1.003 1.003 0 000-1.42l-2.34-2.34a1.003 1.003 0 00-1.42 
+                 0l-1.83 1.83 3.75 3.75 1.84-1.82z" fill="currentColor"/>
+      </svg>
+    </button>
+  </td>
+`;
+cartBody.appendChild(tr);
+
   });
 
   const { sub } = calcTotals();
@@ -694,6 +892,23 @@ if (scanInput) {
       e.code === 'NumpadSubtract' ||
       (e.key === '-' && e.location === KeyboardEvent.DOM_KEY_LOCATION_NUMPAD);
 
+    /* 👇 เพิ่มส่วนนี้เข้าไป */
+    // โฟกัส/พร้อมสแกน: กันพิมพ์จุดจาก Numpad .
+    if (e.code === 'NumpadDecimal') {
+      e.preventDefault();         // ห้ามพิมพ์ .
+      scanInput.select?.();       // เลือกทั้งบรรทัด พร้อมยิงสแกนทับ
+      return;
+    }
+    // คีย์ลัดเพิ่มจำนวน: กันพิมพ์ + จาก Numpad +
+    // คีย์ลัด: Numpad + = ไปช่องรับเงิน
+    if (e.code === 'NumpadAdd') {
+      e.preventDefault();     // ห้ามพิมพ์ +
+      focusCash(true);
+      return;
+}
+
+    /* 👆 จบส่วนที่เพิ่ม */
+
     // กันกดค้างสำหรับคีย์ลัด
     if ((e.key === 'Enter' || isNumpadMinus) && e.repeat) {
       e.preventDefault();
@@ -703,7 +918,7 @@ if (scanInput) {
     // ลดจำนวน (คีย์ลัด: Numpad -)
     if (isNumpadMinus) {
       e.preventDefault();
-      if (Array.isArray(cart) && cart.length > 0) decLatestLine(); // จะกัน qty=1 ในฟังก์ชันนี้
+      if (Array.isArray(cart) && cart.length > 0) decLatestLine();
       return;
     }
 
@@ -713,13 +928,11 @@ if (scanInput) {
       const raw = (scanInput.value || '').trim();
       scanInput.value = '';
 
-      // ไม่มีอินพุต หรือเป็น "0...0" → คีย์ลัดเพิ่มจำนวนของรายการล่าสุด
       if (raw === '' || /^0+$/.test(raw)) {
         if (Array.isArray(cart) && cart.length > 0) incLatestLine();
         return;
       }
 
-      // เดิม: ใส่ราคา 1–9999 = เพิ่มตามราคา, มิฉะนั้นตีเป็นรหัสสินค้า
       const num = Number(raw);
       if (/^\d{1,4}$/.test(raw) && num >= 1 && num <= 9999) {
         addToCartByPrice(num);
@@ -736,6 +949,7 @@ if (scanInput) {
     if (e.key.toLowerCase() === 'r' && e.ctrlKey) { e.preventDefault(); openHeldCenter(); }
   });
 }
+
 
 
 
@@ -922,41 +1136,48 @@ function openReceiptCenter() {
   const raw = localStorage.getItem(RECEIPT_KEY);
   const list = raw ? JSON.parse(raw) : [];
 
-  // overlay + modal
+  // overlay สว่าง
   const overlay = document.createElement('div');
-  overlay.id = 'np-overlay'; // ให้มีตัวตนชัดๆ สำหรับ guard
+  overlay.id = 'np-overlay';
   overlay.style.cssText = `
-    position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:9999;
+    position:fixed; inset:0; background:rgba(0,0,0,.28); z-index:9999;
     display:flex; align-items:center; justify-content:center; padding:16px;
   `;
+
+  // modal สว่าง
   const modal = document.createElement('div');
   modal.style.cssText = `
-    width:min(900px, 100%);
-    max-height:80vh; overflow:auto;
-    background:#0b1220; color:#e5e7eb;
-    border:1px solid #334155; border-radius:14px;
-    box-shadow:0 10px 30px rgba(0,0,0,.35);
+    width:min(900px, 100%); max-height:80vh; overflow:auto;
+    background:#fff; color:#0f172a;
+    border:1px solid #e5e7eb; border-radius:14px;
+    box-shadow:0 10px 30px rgba(0,0,0,.18);
     padding:16px;
     font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   `;
 
   const rows = list.map((r, i) => `
-    <div class="receipt-card" style="border:1px dashed #334155;border-radius:12px;padding:12px;margin-bottom:12px;background:#0b1220;">
-      <h3 style="margin:0 0 6px 0;font-size:16px;">#${i+1} — ${r.datetime}</h3>
+    <div class="receipt-card" style="border:1px dashed #e5e7eb;border-radius:12px;padding:12px;margin-bottom:12px;background:#fff;color:#0f172a;">
+      <h3 style="margin:0 0 6px 0;font-size:16px;color:#0f172a;">#${i+1} — ${r.datetime}</h3>
       <div>ยอดรวม: <b>${format(r.total)}</b> | รับเงิน: ${format(r.cash)} | ทอน: ${format(r.change)}</div>
       <div style="margin:8px 0; display:flex; gap:8px; flex-wrap:wrap;">
-        <button data-id="${r.id}" class="btn-preview" style="padding:6px 10px;border:1px solid #334155;border-radius:10px;background:#0b1220;color:#e5e7eb;cursor:pointer;">เปิดดู</button>
+        <button data-id="${r.id}" class="btn-preview"
+          style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:10px;background:#fff;color:#0f172a;cursor:pointer;">
+          เปิดดู
+        </button>
       </div>
     </div>
-  `).join('') || '<div class="receipt-card">ยังไม่มีใบเสร็จ</div>';
+  `).join('') || '<div class="receipt-card" style="border:1px dashed #e5e7eb;border-radius:12px;padding:12px;">ยังไม่มีใบเสร็จ</div>';
 
   modal.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <h2 style="margin:0;font-size:18px;">ใบเสร็จย้อนหลัง</h2>
-      <button id="rc-close" style="padding:6px 10px;border:1px solid #334155;border-radius:10px;background:#1f2937;color:#e5e7eb;cursor:pointer;">ปิด</button>
+      <h2 style="margin:0;font-size:18px;color:#0f172a;">ใบเสร็จย้อนหลัง</h2>
+      <button id="rc-close"
+        style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:10px;background:#fff;color:#0f172a;cursor:pointer;">
+        ปิด
+      </button>
     </div>
     ${rows}
-    <small style="color:#94a3b8;">หมายเหตุ: เปิดดู/พิมพ์ได้ แต่ไม่มีการดาวน์โหลดไฟล์</small>
+    <small style="color:#64748b;">หมายเหตุ: เปิดดู/พิมพ์ได้ แต่ไม่มีการดาวน์โหลดไฟล์</small>
   `;
 
   overlay.appendChild(modal);
@@ -980,6 +1201,7 @@ function openReceiptCenter() {
     });
   });
 }
+
 
 // ===== DOM ใหม่สำหรับป๊อปอัปสรุปยอด =====
 const appTitle   = document.getElementById('app-title');

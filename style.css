@@ -1,486 +1,560 @@
-:root { --bg:#0f172a; --card:#111827; --text:#e5e7eb; --muted:#94a3b8; --accent:#22c55e; --danger:#ef4444; }
-* { box-sizing: border-box; }
-html,body { margin:0; padding:0; background:var(--bg); color:var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-.app { max-width: 1200px; margin: 0 auto; padding: 16px; }
-header { display:flex; gap:16px; align-items:center; justify-content: space-between; margin-bottom: 12px; }
-h1 { margin:0; font-size: 22px; }
-.scan { display:flex; gap:8px; flex:1; justify-content:flex-end; }
-#scan-input { width: 120px; padding: 10px 12px; border-radius: 12px; border:1px solid #334155; background:#0b1220; color:var(--text); outline:none; }
-#scan-input::placeholder { color: #64748b; }
-/* ให้คอนเทนเนอร์ของช่องสแกนเป็นจุดอ้างอิง (กันภาพล้น) */
-/* คอนเทนเนอร์ของช่องสแกน: ให้แสดงผลเกินขอบได้เวลาขยาย/เด้ง */
-.scan{
-  position: relative;
-  display: flex;
-  align-items: center;
-  overflow: visible;             /* สำคัญสำหรับเอฟเฟกต์เด้ง */
+/* ===== Light, Vivid Day Theme ===== */
+:root{
+  --bg:#f6fbff;          /* ฟ้าอ่อนมาก */
+  --surface:#eef6ff;     /* ฟ้าอมน้ำเงินจาง */
+  --card:#ffffff;        /* พื้นการ์ดขาว */
+  --text:#0f172a;        /* น้ำเงินเข้มอ่านง่าย */
+  --muted:#475569;       /* เทาอมฟ้าอ่านง่าย */
+  --border:#e5e7eb;      /* เส้นบางอ่อน */
+  --accent:#16a34a;      /* เขียวสด (ยอดรวม/เลขเด่น) */
+  --accent-2:#22c55e;    /* เขียวสดอีกโทน */
+  --brand:#1d4ed8;       /* ฟ้าน้ำเงินสดสำหรับ header */
+  --brand-2:#60a5fa;     /* ฟ้าอ่อนไล่เฉด */
+  --danger:#ef4444;      /* แดงฉูดฉาด */
+  --warn:#f59e0b;        /* เหลืองเตือน */
 }
 
-/* สถานะปกติ */
+*{box-sizing:border-box;}
+html,body{
+  margin:0;padding:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+}
+
+/* ===== Layout ===== */
+.app{max-width:1200px;margin:0 auto;padding:16px;}
+header{
+  display:flex;gap:16px;align-items:center;justify-content:space-between;margin-bottom:12px;
+  background:linear-gradient(90deg,var(--brand),var(--brand-2));
+  color:#fff;
+  border-radius:16px;
+  padding:12px 16px;
+  box-shadow:0 6px 18px rgba(29,78,216,.15);
+}
+h1{margin:0;font-size:22px;color:#fff}  /* ชื่อร้านขาวชัด */
+
+/* ช่องสแกน: พื้นขาว ขอบฟ้าอ่อน อ่านง่าย */
+.scan{display:flex;gap:8px;flex:1;justify-content:flex-end}
 #scan-input{
-  width: clamp(220px, 28vw, 380px);
-  background: #0b1220;
-  border: 1px solid #334155;
-  color: #e5e7eb;
-  outline: none;
-
-  /* เตรียมอนิเมชัน */
-  transform-origin: left center; /* ขยาย/เด้งอิงด้านซ้าย */
-  will-change: transform, box-shadow, background-color, border-color;
-  transition:
-    background-color .15s ease,
-    border-color .15s ease,
-    color .15s ease,
-    box-shadow .2s ease;
+  width:clamp(220px,28vw,380px);
+  padding:10px 12px;border-radius:12px;border:1px solid #cbd5e1;
+  background:#fff;color:var(--text);outline:none;
+  transition:box-shadow .2s,border-color .2s;
+}
+#scan-input::placeholder{color:#94a3b8}
+#scan-input:focus{
+  border-color:#60a5fa;
+  box-shadow:0 0 0 3px rgba(96,165,250,.35);
 }
 
-/* โฟกัส: "นูน" + เด้งไปทางซ้าย + ขยายชัด ๆ */
-#scan-input:focus,
-#scan-input:focus-visible{
-  animation: scan-bump-left .28s cubic-bezier(.2,.9,.25,1.3) both;
+/* นาฬิกาให้ตัดกับเฮดเดอร์ */
+.clock{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:700;
+  font-size:clamp(22px,4.2vw,40px);color:#eaf2ff;}
 
-  /* โทนเข้ม + ขอบชัด + เงาหลายชั้นให้นูน */
-  background: #0a0f1c;
-  border-color: #60a5fa;
-  box-shadow:
-    0 0 0 3px rgba(96,165,250,.28),     /* วงเรืองแสงฟ้า */
-    0 18px 38px rgba(0,0,0,.50),        /* เงาหลัก ลึก */
-    0 8px 16px rgba(0,0,0,.35),         /* เงารอง */
-    inset 0 1px 0 rgba(255,255,255,.06),/* ไฮไลต์ด้านบนให้ดูนูน */
-    inset 0 -1px 0 rgba(0,0,0,.30);     /* ไล่เงาด้านล่าง */
-  color: #fff;
+/* ปุ่มทั่วไป (พื้นขาว, ขอบอ่อน) */
+button{
+  padding:10px 14px;border-radius:12px;border:1px solid #cbd5e1;background:#fff;color:var(--text);
+  cursor:pointer;transition:transform .05s ease, box-shadow .2s;
+  box-shadow:0 2px 8px rgba(0,0,0,.04);
+}
+button:hover{box-shadow:0 6px 16px rgba(0,0,0,.08)}
+button:active{transform:translateY(1px)}
+
+/* เฉดปุ่มสำคัญ */
+#clear-cart{background:#fff;border-color:#fecaca;color:#b91c1c}
+#clear-cart:hover{background:#fee2e2}
+#hold-bill{background:#fff8e1;border-color:#fde68a;color:#b45309}
+#hold-bill:hover{background:#fff1c2}
+#view-receipts{background:#eef8ff;border-color:#93c5fd;color:#1d4ed8}
+#view-receipts:hover{background:#e3f0ff}
+
+/* ตะกร้าพักบิล (ปุ่มมุมขวา) ให้เป็นพื้นขาวขอบฟ้า */
+.cart-btn{
+  position:relative;display:inline-flex;align-items:center;gap:8px;
+  padding:10px 12px;border-radius:12px;border:1px solid #cbd5e1;background:#fff;color:var(--text);
+  box-shadow:0 6px 16px rgba(0,0,0,.08);
+}
+.cart-btn .badge{
+  position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;padding:0 6px;border-radius:999px;
+  background:var(--danger);color:#fff;font-size:12px;line-height:20px;text-align:center;border:2px solid #fff;display:none;
 }
 
-/* keyframes: เด้งไปทางซ้ายเล็กน้อยแล้วค่อย ๆ เซตตัว */
-@keyframes scan-bump-left{
-  0%   { transform: scale(1) translateX(0) translateZ(0); }
-  50%  { transform: scale(1.14) translateX(-14px) translateZ(0); } /* นูนใหญ่ + เด้งซ้าย */
-  80%  { transform: scale(1.10) translateX(-8px) translateZ(0);  } /* คืนตัวเล็กน้อย */
-  100% { transform: scale(1.12) translateX(-10px) translateZ(0); } /* จบด้วยนูนกำลังดี */
+/* ===== Grid / Panels ===== */
+.grid{display:grid;grid-template-columns:1.3fr 0.7fr;gap:16px}
+.left,.right{
+  background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px;
+  box-shadow:0 6px 16px rgba(0,0,0,.05);
 }
 
-/* placeholder จางลงตอนโฟกัส */
-#scan-input::placeholder{
-  color: #64748b;
-  transition: color .15s ease, opacity .15s ease;
+/* ===== Cart Table (เส้นบางอ่อน อ่านง่าย) ===== */
+.cart{width:100%;border-collapse:collapse}
+.cart th,.cart td{border-bottom:1px dashed var(--border);padding:8px}
+.cart th{text-align:left;color:var(--muted);font-weight:600}
+.cart td.num,.cart th.num{text-align:right}
+.cart td .qty{display:flex;gap:6px;justify-content:flex-end;align-items:center}
+.qty button{padding:4px 8px}
+
+/* ===== Totals / Change ===== */
+.totals{display:flex;flex-direction:column;gap:8px;font-size:18px}
+.item-count{font-size:15px;font-weight:600;color:var(--muted);margin-bottom:4px}
+.big-total{
+  font-size:96px;           /* ใหญ่ชัดกลางวัน */
+  font-weight:900;line-height:1.05;display:inline-block;
+  color:var(--accent-2);    /* เขียวสดแบบภาพตัวอย่าง */
+  text-shadow:0 2px 0 rgba(34,197,94,.12);
+  transition:transform .18s ease,opacity .18s ease;
 }
-#scan-input:focus::placeholder{ color:#94a3b8; opacity:.6; }
+#subtotal.shrink,#change.shrink{transform:scale(.5);opacity:.9}
+.change{font-size:18px;margin-top:6px}
 
-/* เคารพผู้ใช้ที่ลดแอนิเมชัน */
-@media (prefers-reduced-motion: reduce){
-  #scan-input{ transition: none; }
-  #scan-input:focus{ animation: none; }
+/* ช่องรับเงิน: พื้นขาวโฟกัสฟ้า */
+.row{display:flex;align-items:center;gap:8px}
+.row input{
+  flex:1;padding:10px 12px;border-radius:10px;border:1px solid #cbd5e1;background:#fff;color:var(--text);outline:none;
+  transition:box-shadow .2s,border-color .2s;
 }
+#cash:focus{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(96,165,250,.35)}
+#cash::placeholder{color:#94a3b8}
 
+/* ปุ่มชุด actions เป็นตาราง 2 คอลัมน์ */
+.actions{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
 
-button { padding: 10px 14px; border-radius: 10px; border:1px solid #334155; background:#0b1220; color:var(--text); cursor:pointer; }
-button:hover { border-color:#475569; }
-button.danger { background:#1a0b0b; border-color:#7f1d1d; }
+/* Hint ฟ้าอ่อนอ่านง่าย */
+.hint{color:#1d4ed8;font-size:12px;margin-top:8px;opacity:.9}
 
+/* ===== QR pay (ถ้ามี) ให้โทนสว่าง ===== */
+#qr-pay-wrap.hidden{display:none}
+#qr-pay-wrap.show{display:block}
+.qr-box{
+  margin:10px auto 0;max-width:280px;display:flex;gap:10px;align-items:center;justify-content:center;
+  padding:10px;border:1px solid var(--border);border-radius:14px;background:#fff;box-shadow:0 6px 16px rgba(0,0,0,.05)
+}
+.qr-amount{font-weight:700;color:#166534}
 
-.grid { display:grid; grid-template-columns: 1.3fr 0.7fr; gap:16px; }
-.left, .right { background: var(--card); border:1px solid #1f2937; border-radius: 16px; padding: 12px; }
-
-
-.cart { width:100%; border-collapse: collapse; }
-.cart th, .cart td { border-bottom: 1px dashed #334155; padding: 8px; }
-.cart th { text-align:left; color:var(--muted); font-weight:600; }
-.cart td.num, .cart th.num { text-align:right; }
-.cart td .qty { display:flex; gap:6px; justify-content:flex-end; align-items:center; }
-.qty button { padding: 4px 8px; }
-
-
-.panel { display:flex; flex-direction: column; gap:10px; }
-.row { display:flex; align-items:center; gap:8px; }
-.row label { min-width: 90px; color:var(--muted); }
-.row input { flex:1; padding: 10px 12px; border-radius: 10px; border:1px solid #334155; background:#0b1220; color:var(--text); }
-.totals { display:flex; flex-direction: column; gap:6px; font-size: 18px; }
-.totals span { font-weight:700; color:var(--accent); }
-.change { font-size: 18px; margin-top: 6px; }
-.actions { display:grid; grid-template-columns: repeat(2, 1fr); gap:8px; margin-top:8px; }
-.hint { color:#93c5fd; font-size:12px; margin-top:8px; opacity:0.85; }
-
-/* ใช้ในหน้า “ดูใบเสร็จ” ที่เปิดด้วย window.open */
-.receipt-list { max-width: 800px; margin: 24px auto; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-.receipt-card { border:1px dashed #334155; border-radius:12px; padding:12px; margin-bottom:12px; background:#0b1220; color:#e5e7eb; }
-.receipt-card h3 { margin:0 0 6px 0; font-size:16px; }
-.receipt-card pre { white-space:pre-wrap; margin:0; }
-
-
-
-footer { margin-top: 12px; color:var(--muted); text-align:center; }
-
-
-/* iPad แนวตั้ง: บังคับกลับเป็น 2 คอลัมน์ */
-@media (orientation: portrait) and (min-width: 600px) {
-  .grid { grid-template-columns: 1.3fr 0.7fr; }
-  /* ให้ความกว้างช่องสแกนกลับมาแบบเดิม (ไม่เต็มแถว) */
-  #scan-input { width: clamp(220px, 28vw, 380px); }
+/* ===== Responsive (แนวตั้ง iPad ให้ยัง 2 คอลัมน์) ===== */
+@media (orientation:portrait) and (min-width:600px){
+  .grid{grid-template-columns:1.3fr .7fr}
+  #scan-input{width:clamp(220px,28vw,380px)}
 }
 
+/* ปรับสไตล์โมดัล/ใบเสร็จเป็นโทนสว่าง */
+.receipt-card{border:1px dashed var(--border);border-radius:12px;padding:12px;margin-bottom:12px;background:#fff;color:var(--text)}
+.sales-popup{
+  position:fixed;right:16px;top:16px;max-width:360px;background:#fff;border:1px solid var(--border);
+  border-radius:14px;padding:12px 14px;box-shadow:0 10px 30px rgba(0,0,0,.10);color:var(--text);z-index:9999;
+}
+.sales-popup .num{font-weight:800;color:var(--accent)}
+footer{margin-top:12px;color:var(--muted);text-align:center}
 
-/* คอนเทนเนอร์ของช่องรับเงิน: อนุญาตให้แอนิเมชันล้นออกนิดหน่อย */
-.row.pay{
+
+
+.qr-box {
+  margin: 10px auto 0;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;   /* 👈 ลดเหลือ 2px */
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 6px 16px rgba(0,0,0,.05);
+}
+
+.qr-box img {
+  max-width: 200px;
+  height: auto;
+  display: block;
+  margin: 0;  /* ไม่มี margin เพิ่ม */
+}
+
+.qr-amount {
+  text-align: center;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.qr-amount .items {
+  display: block;        /* บังคับขึ้นบรรทัดใหม่ */
+  font-size: 14px;
+  color: #475569;
+  margin: 4px 0 2px 0;   /* 👈 ช่องว่างบน-ล่างเล็กๆ */
+  line-height: 1.2;      /* ลดระยะบรรทัด */
+}
+
+.qr-amount .label {
+  font-size: 16px;
+  color: #475569;
+  margin-right: 4px;
+}
+
+.qr-amount .price {
+  font-size: 28px;
+  font-weight: 800;
+  color: #166534;
+}
+
+/* QR amount line — ใช้ id ที่ JS อัปเดต */
+.qr-amount{ text-align:center; line-height:1.15; margin:0; padding:0; }
+#qr-count  { display:block; font-size:13px; color:#475569; margin:2px 0 4px; }
+#qr-amt    { display:inline-block; font-size:24px; font-weight:900; color:#166534; margin:0 4px; }
+
+/* ===== Fix: ป๊อปอัปเรียกบิลที่พักไว้ ไม่ให้เต็มจอ ===== */
+/* ชั้นทับพื้นหลัง */
+.held-modal-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(0,0,0,.28) !important;
+  backdrop-filter: blur(2px);
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
+  z-index: 9998 !important;
+}
+
+/* กล่องป๊อปอัป */
+.held-modal {
   position: relative;
-  overflow: visible;
+  width: min(560px, 94vw) !important;   /* ✅ ไม่เต็มจอแล้ว */
+  max-height: 80vh !important;          /* สูงสุด 80% ของจอ */
+  overflow: hidden !important;          /* header fixed, list เลื่อน */
+  background: #fff !important;
+  color: #0f172a !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,.18) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  z-index: 9999 !important;
 }
 
-/* สถานะปกติของช่องรับเงิน */
-#cash{
-  /* ถ้าตอนนี้ใช้ flex:1 อยู่แล้ว ไม่ต้องกำหนด width ก็ได้ */
-  background: #0b1220;
-  border: 1px solid #334155;
-  color: #e5e7eb;
-  outline: none;
+/* ส่วนหัวในกล่อง */
+.held-modal > header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f8fafc;                  /* โทนสว่าง */
+  color: #0f172a;
+  position: sticky; top: 0; z-index: 1; /* เลื่อนแล้วยังเห็นหัว */
+}
 
-  /* เตรียมแอนิเมชันแบบเดียวกับ scan */
+/* รายการบิลให้เลื่อนภายในกล่อง */
+.held-modal .held-list {
+  overflow: auto !important;
+  padding: 8px 10px;
+}
+
+/* การ์ดแต่ละบิล */
+.held-modal .held-item {
+  display: grid; grid-template-columns: 1fr auto; gap: 10px;
+  padding: 10px 12px; border: 1px dashed #e5e7eb; border-radius: 12px;
+  background: #ffffff; color: #0f172a;
+  margin-bottom: 8px;
+}
+
+/* ปุ่มในกล่อง */
+.held-modal .held-actions { display: inline-flex; gap: 8px; }
+.held-modal .held-actions button {
+  padding: 6px 10px; border-radius: 10px; border: 1px solid #e5e7eb;
+  background: #f1f5f9; color: #0f172a; cursor: pointer;
+}
+.held-modal .held-actions button:hover { background: #e2e8f0; }
+
+/* จอเล็กมาก */
+@media (max-width: 420px){
+  .held-modal { width: 94vw !important; max-height: 78vh !important; }
+}
+
+/* === ป๊อปอัปเพิ่มสินค้าใหม่ (JS ใส่ inline style มืดไว้) — บังคับโทนสว่าง === */
+#np-overlay{
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(0,0,0,.28) !important;  /* พื้นหลังจาง */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
+  z-index: 9999 !important;
+}
+
+/* กล่อง modal ที่ถูกสร้างแบบไม่มี class/id -> ใช้ตัวเลือกตามโครงสร้าง */
+#np-overlay > div{
+  width: min(520px, 94vw) !important;
+  max-height: 80vh !important;
+  overflow: auto !important;
+
+  background: #fff !important;            /* ✅ เปลี่ยนเป็นสว่าง */
+  color: #0f172a !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 50px rgba(0,0,0,.18) !important;
+  padding: 16px !important;
+  font-family: system-ui,-apple-system,Segoe UI,Roboto,sans-serif !important;
+}
+
+/* หัวข้อ */
+#np-overlay > div h2{
+  margin: 0 0 10px 0 !important;
+  font-size: 18px !important;
+  color: #1d4ed8 !important;              /* น้ำเงินสดแบบ header */
+}
+
+/* ข้อความย่อย/label */
+#np-overlay > div div[style*="margin-bottom"]{ color:#475569 !important; }
+#np-overlay > div label span{ color:#475569 !important; }
+
+/* ช่องกรอกใน modal (JS ใส่พื้นมืดไว้ → บังคับเป็นขาว) */
+#np-overlay input{
+  padding: 10px 12px !important;
+  border-radius: 10px !important;
+  border: 1px solid #cbd5e1 !important;
+  background: #fff !important;
+  color: #0f172a !important;
+  outline: none !important;
+}
+#np-overlay input:focus{
+  border-color:#60a5fa !important;
+  box-shadow:0 0 0 3px rgba(96,165,250,.35) !important;
+}
+
+/* ปุ่มใน modal (รวมปุ่ม “ปิด”) */
+#np-overlay button{
+  padding: 8px 12px !important;
+  border-radius: 10px !important;
+  border: 1px solid #cbd5e1 !important;
+  background: #fff !important;
+  color: #0f172a !important;
+  cursor: pointer !important;
+}
+#np-overlay button:hover{ background:#f1f5f9 !important; }
+
+/* ปุ่มบันทึกให้เด่น (ถ้ามี) */
+#np-overlay button.btn-save{
+  background:#1d4ed8 !important; color:#fff !important; border:none !important;
+}
+#np-overlay button.btn-save:hover{ background:#2563eb !important; }
+
+/* === ป๊อปอัปบิลที่พักไว้ (มี class ใน JS) — ขนาด/โทนสว่าง === */
+.held-modal-backdrop{
+  position:fixed !important; inset:0 !important;
+  background:rgba(0,0,0,.28) !important;
+  display:flex !important; align-items:center !important; justify-content:center !important;
+  padding:16px !important; z-index:9998 !important;
+}
+.held-modal{
+  width:min(560px,94vw) !important; max-height:80vh !important; overflow:hidden !important;
+  background:#fff !important; color:#0f172a !important; border:1px solid #e5e7eb !important;
+  border-radius:16px !important; box-shadow:0 20px 60px rgba(0,0,0,.18) !important;
+  display:flex !important; flex-direction:column !important; z-index:9999 !important;
+}
+.held-modal > header{
+  position:sticky; top:0; z-index:1;
+  display:flex; justify-content:space-between; align-items:center;
+  padding:10px 14px; background:#f8fafc; border-bottom:1px solid #e5e7eb;
+}
+.held-modal .held-list{ overflow:auto !important; padding:8px 10px; }
+.held-modal .held-item{
+  display:grid; grid-template-columns:1fr auto; gap:10px;
+  padding:10px 12px; border:1px dashed #e5e7eb; border-radius:12px; background:#fff; margin-bottom:8px;
+}
+.held-modal .held-actions{ display:inline-flex; gap:8px; }
+.held-modal .held-actions button{
+  padding:6px 10px; border-radius:10px; border:1px solid #e5e7eb; background:#f1f5f9; color:#0f172a;
+}
+.held-modal .held-actions button:hover{ background:#e2e8f0; }
+@media (max-width:420px){ .held-modal{ width:94vw !important; max-height:78vh !important; } }
+
+/* utility: ซ่อนทุกอย่างที่มี .hidden */
+.hidden { display: none !important; }
+
+/* === Animations pack (light theme) — drop-in patch === */
+/* เด้งช่องสแกน + ช่องรับเงิน */
+#scan-input,
+#cash{
   transform-origin: left center;
   will-change: transform, box-shadow, background-color, border-color;
   transition:
     background-color .15s ease,
     border-color .15s ease,
     color .15s ease,
-    box-shadow .2s ease;
+    box-shadow .20s ease;
 }
-
-/* โฟกัส: นูน+เด้งซ้าย (ใช้ keyframes เดียวกับ scan) */
+#scan-input:focus,
+#scan-input:focus-visible,
 #cash:focus,
 #cash:focus-visible{
   animation: scan-bump-left .28s cubic-bezier(.2,.9,.25,1.3) both;
-
-  /* ทำให้เด่นขึ้น */
-  background: #0a0f1c;
-  border-color: #f760fa;
+  background:#fff;
+  border-color:#60a5fa;
   box-shadow:
-    0 0 0 3px rgba(96,165,250,.28),
-    0 18px 38px rgba(0,0,0,.50),
-    0 8px 16px rgba(0,0,0,.35),
-    inset 0 1px 0 rgba(255,255,255,.06),
-    inset 0 -1px 0 rgba(0,0,0,.30);
-  color: #fff;
-}
-
-/* โทน placeholder ให้จาง/อ่านง่ายขึ้น */
-#cash::placeholder{
-  color: #64748b;
-  transition: color .15s ease, opacity .15s ease;
-}
-#cash:focus::placeholder{ color:#94a3b8; opacity:.6; }
-
-/* เคารพผู้ใช้ที่ลดแอนิเมชัน */
-@media (prefers-reduced-motion: reduce){
-  #cash{ transition: none; }
-  #cash:focus{ animation: none; }
-}
-
-
-
-
-/* ขนาด/น้ำหนักของยอดรวมให้เด่น */
-.big-total {
-  font-size: 120px;        /* ปรับได้ตามชอบ: 40–56px */
-  font-weight: 900;
-  line-height: 1.1;
-  display: inline-block;
-}
-
-/* ถ้าอยากให้เด่นขึ้นอีก ใส่พื้นหลังอ่อน ๆ + ขอบมน (ไม่บังคับ) */
-
-
-#app-title { cursor: pointer; }
-
-.sales-popup {
-  position: fixed;
-  right: 16px;
-  top: 16px;
-  max-width: 360px;
-  background: var(--card);
-  border: 1px solid #334155;
-  border-radius: 14px;
-  padding: 12px 14px;
-  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    0 0 0 3px rgba(96,165,250,.35),
+    0 10px 22px rgba(0,0,0,.10),
+    inset 0 1px 0 rgba(255,255,255,.35);
   color: var(--text);
-  z-index: 9999;
 }
-.sales-popup.hidden { display: none; }
-.sales-popup h3 { margin: 0 0 6px 0; font-size: 16px; }
-.sales-popup .row { display:flex; justify-content:space-between; margin: 4px 0; }
-.sales-popup .num { font-weight: 800; color: var(--accent); }
-.sales-popup small { color: var(--muted); }
-
-/* ย่อขนาดยอดรวมครึ่งหนึ่งเมื่อมีการคำนวณเงินทอน */
-/* ยอดรวมให้ใหญ่เด่น แล้วค่อยย่อเมื่อคำนวณเงินทอน */
-.totals .grand {
-  font-size: 56px;         /* ขนาดปกติ (ใหญ่) */
-  font-weight: 900;
-  line-height: 1.05;
-  transition: transform 0.18s ease, opacity 0.18s ease;
-  transform-origin: right center;
+@keyframes scan-bump-left{
+  0%   { transform: scale(1) translateX(0); }
+  50%  { transform: scale(1.10) translateX(-10px); }
+  80%  { transform: scale(1.06) translateX(-6px);  }
+  100% { transform: scale(1.08) translateX(-8px); }
 }
 
-.totals .grand.shrink {
-  transform: scale(0.5);    /* ย่อครึ่งหนึ่ง */
-  opacity: 0.9;
-}
-
-
-/* ตอนพิมพ์ใบเสร็จไม่ต้องย่อ */
-@media print {
-  .totals .grand { transform: none !important; }
-}
-
-/* ย่อ/ขยายเฉพาะตัวเลขยอดรวม (#subtotal) */
-/* ให้สองตัวนี้ย่อ/ขยายได้ด้วยทรานซิชัน */
-#subtotal,
-#change {
-  display: inline-block;
-  transform-origin: right center;
-  transition: transform 0.18s ease, opacity 0.18s ease;
-}
-
-/* ย่อครึ่งหนึ่ง */
-#subtotal.shrink,
-#change.shrink {
-  transform: scale(0.5);
-  opacity: 0.9;
-}
-
-/* ปุ่มตะกร้าพักบิล */
-.cart-btn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid #334155;
-  background: #0b1220;
-  color: #e5e7eb;
-  cursor: pointer;
-  box-shadow: 0 8px 24px rgba(0,0,0,.25);
-}
-.cart-btn:hover { background: #131c2e; }
-
-/* แบดจ์ตัวเลข */
-.cart-btn .badge {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  border-radius: 999px;
-  background: #ef4444;
-  color: #fff;
-  font-size: 12px;
-  line-height: 20px;
-  text-align: center;
-  border: 2px solid #0b1220;
-  display: none; /* ซ่อนเมื่อ = 0 */
-}
-
-/* modal เรียกบิลที่พักไว้ */
-.held-modal-backdrop {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,.6);
-  display: flex; align-items: center; justify-content: center;
-  padding: 16px;
-  z-index: 10000;
-}
-.held-modal {
-  width: min(920px, 100%);
-  max-height: min(86vh, 100%);
-  background: #0b1220;
-  border: 1px solid #334155;
-  border-radius: 14px;
-  overflow: hidden;
-  display: flex; flex-direction: column;
-}
-.held-modal header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 14px; border-bottom: 1px solid #334155; color: #e5e7eb;
-}
-.held-list { overflow: auto; }
-.held-item {
-  display: grid; grid-template-columns: 1fr auto auto;
-  gap: 10px; align-items: center;
-  padding: 12px 14px; border-bottom: 1px solid #233047;
-  color: #d1d5db;
-}
-.held-item strong { color: #e5e7eb; }
-.held-actions { display: inline-flex; gap: 8px; }
-.held-actions button {
-  padding: 6px 10px; border-radius: 10px; border: 1px solid #334155;
-  background: #1f2937; color: #e5e7eb; cursor: pointer;
-}
-.held-actions button:hover { background: #263143; }
-
-.clock{
-  margin-left: auto;
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  line-height: 1;
-  /* ใหญ่ขึ้น และ responsive: อย่างน้อย 24px, ปกติราว 40px บนเดสก์ท็อป */
-  font-size: clamp(24px, 4.5vw, 42px);
-  color: #e5e7eb;
-  white-space: nowrap;
-}
-
-/* ---------- แถวสินค้าที่เพิ่งถูกเพิ่ม ---------- */
-#cart-body tr.cart-added {
-  animation: cartRowPop .55s cubic-bezier(.2,.9,.25,1.2);
-}
+/* แถวสินค้าที่เพิ่งถูกเพิ่ม */
+#cart-body tr.cart-added{ animation: cartRowPop .55s cubic-bezier(.2,.9,.25,1.2); }
 @keyframes cartRowPop{
   0%   { transform: scale(.98); background: rgba(96,165,250,.10); }
   45%  { transform: scale(1.02); background: rgba(96,165,250,.18); }
   100% { transform: scale(1);    background: transparent; }
 }
 
-/* ---------- ปุ่มตะกร้าเด้ง ---------- */
-.cart-btn.btn-bump {
-  animation: cartBtnBump .35s cubic-bezier(.2,.9,.25,1.2);
-}
+/* ปุ่มตะกร้าดีดตัวเล็กน้อย */
+.cart-btn.btn-bump{ animation: cartBtnBump .35s cubic-bezier(.2,.9,.25,1.2); }
 @keyframes cartBtnBump{
   0%   { transform: scale(1); }
   50%  { transform: scale(1.12) translateY(-2px); }
   100% { transform: scale(1.06); }
 }
 
-/* ---------- ชิปที่บินจากช่องสแกนไปตะกร้า ---------- */
-.fly-chip{
-  position: fixed; z-index: 9999; pointer-events: none;
-  padding: 6px 10px; border-radius: 999px;
-  background: #0ea5e9; color: #fff; font-weight: 700; font-size: 12px;
-  box-shadow: 0 10px 22px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.2);
-  transform: translate(-50%,-50%); /* เราจะเลื่อนด้วย translate เพิ่มเติมผ่าน WAAPI */
-  will-change: transform, opacity;
-}
-
-/* ---------- ทำยอดรวมเด้งเบา ๆ ---------- */
-#subtotal.pulse {
-  animation: totalPulse .45s ease;
-}
+/* ยอดรวมเด้งสั้น ๆ เมื่อมีการเปลี่ยนแปลง */
+#subtotal.pulse{ animation: totalPulse .45s ease; }
 @keyframes totalPulse{
   0%   { transform: scale(1); }
-  50%  { transform: scale(1.18); }
-  100% { transform: scale(1); }
+  50%  { transform: scale(1.14); filter: brightness(1.08); }
+  100% { transform: scale(1);   filter: brightness(1); }
 }
 
-/* แถวล่าสุด: ขยายค้าง + โทนเด่น */
-#cart-body tr{
-  transition: transform .18s ease, background-color .18s ease, box-shadow .18s ease;
-  transform-origin: center;
-}
-#cart-body tr.cart-current{
-  /* transform: scale(1.03); */
-  background: rgba(96,165,250,.08);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
-}
-
-.item-count {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--muted);
-  margin-bottom: 4px;
+/* “ชิป” บิน (ถ้า JS สร้าง .fly-chip อยู่แล้ว) */
+.fly-chip{
+  position: fixed; left:0; top:0; transform: translate(-50%,-50%);
+  padding: 6px 10px; border-radius: 999px;
+  font: 700 12px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  background: var(--accent); color: #0b1d0f;
+  box-shadow: 0 6px 16px rgba(0,0,0,.18);
+  pointer-events: none; z-index: 9999; will-change: transform, opacity;
 }
 
-
-/* ==== Effects for add-to-cart (no setTimeout needed) ==== */
-
-/* 1) ไฮไลต์แถวล่าสุดในตะกร้า */
-.cart-added {
-  animation: cartRowFlash 600ms ease-out;
-}
-@keyframes cartRowFlash {
-  0%   { background: rgba(0, 200, 0, 0.18); }
-  40%  { background: rgba(0, 200, 0, 0.28); }
-  100% { background: transparent; }
+/* เคารพผู้ใช้ที่ลดแอนิเมชัน */
+@media (prefers-reduced-motion: reduce){
+  #scan-input,#cash{ transition:none; }
+  #scan-input:focus,#cash:focus{ animation:none; }
+  #cart-body tr.cart-added, .cart-btn.btn-bump, #subtotal.pulse { animation:none !important; }
 }
 
-/* 2) ปุ่มตะกร้าดีดตัวเล็กน้อย */
-.btn-bump {
-  animation: btnBump 380ms cubic-bezier(.2,.9,.25,1.2);
-  transform-origin: center;
-}
-@keyframes btnBump {
-  0%   { transform: scale(1); }
-  40%  { transform: scale(1.08); }
-  100% { transform: scale(1); }
+
+/* ยอดรวม (ตัวเลขใหญ่) */
+.big-total, 
+#subtotal {                /* หากหน้าคุณใช้ #subtotal เป็นตัวเลขหลัก ให้คุมตรงนี้ด้วย */
+  color: #a30549 !important;      /* เขียวสด */
+  text-shadow: 0 2px 0 rgba(34,197,94,.12);
 }
 
-/* 3) เด้งยอดรวมสั้น ๆ */
-.pulse {
-  animation: pulseOnce 360ms ease-out;
-}
-@keyframes pulseOnce {
-  0%   { transform: translateZ(0) scale(1); filter: brightness(1); }
-  40%  { transform: translateZ(0) scale(1.04); filter: brightness(1.25); }
-  100% { transform: translateZ(0) scale(1); filter: brightness(1); }
+/* ป้าย/ข้อความคำว่า "ยอดรวม" (ถ้ามีเป็น label แยก) */
+.totals .label-total{
+  color: #a30549 !important;      /* เทาอ่านง่าย */
 }
 
-/* 4) ชิปบินจากช่องสแกน → ปุ่มตะกร้า (สร้างด้วย JS) */
-.fly-chip {
-  position: fixed;
-  left: 0; top: 0;
-  transform: translate(-50%,-50%);
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 12px;
+/* เงินทอน */
+#change, 
+.change, 
+.change .num {             /* เผื่อบางหน้าใช้ .num ห่อเลขเงินทอน */
+  color: #09a307 !important;      /* น้ำเงินสด */
+}
+
+/* ถ้าอยากให้เงินทอนเด่นมาก (เน้นเหมือนยอดรวม) ใช้ขนาดใหญ่/หนา */
+#change .num{
+  font-weight: 900;
+  /* ตัวอย่าง: color: #eab308 !important;  เหลือง */
+}
+
+/* ถ้ามีสไตล์ย่อ-ขยายเวลาโชว์เงินทอน (จากโค้ดก่อนหน้า) ให้คุมเงาตามสีใหม่ */
+#subtotal.shrink, 
+#change.shrink{
+  filter: none;
+}
+
+/* ฟอนต์หลัก */
+:root{
+  --font-heading: "Kanit", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  --font-body: "Noto Sans Thai", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+/* เนื้อความทั้งหน้า */
+html, body { font-family: var(--font-body); }
+
+/* ชื่อร้าน/หัวข้อ/ปุ่มสำคัญ */
+h1, header h1, .title, .btn, button, .tabs button {
+  font-family: var(--font-heading);
   font-weight: 700;
-  line-height: 1;
-  background: #22c55e;        /* เขียวอ่านง่าย */
-  color: #0b1d0f;
-  box-shadow: 0 6px 16px rgba(0,0,0,.25);
-  z-index: 9999;
-  pointer-events: none;
-  will-change: transform, opacity;
 }
 
-/* (ออปชัน) ถ้าธีมมืดอยู่แล้ว อยากปรับสีให้นุ่มตา */
-@media (prefers-color-scheme: dark) {
-  .fly-chip { background: #34d399; color: #052e16; }
+/* เลข “ยอดรวม” ให้หนาเด่น ฟีลเดียวกับภาพ */
+.big-total, #subtotal {
+  font-family: var(--font-heading);
+  font-weight: 800;                /* หนามาก */
+  font-variant-numeric: tabular-nums; /* เลขชิดช่องสวย */
 }
 
-@media (max-width: 680px) {
-  .grid { grid-template-columns: 1fr; }
-  #scan-input { width: 100%; }
+/* ตัวเลขสำคัญอื่น ๆ (เงินทอน/จำนวนรายการ) */
+#change, .item-count, .cart td.num, .cart th.num {
+  font-family: var(--font-heading);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
 }
 
-/* ลด/ปิดแอนิเมชันสำหรับผู้ใช้ที่ไม่ต้องการการเคลื่อนไหว */
-@media (prefers-reduced-motion: reduce) {
-  .cart-added, .btn-bump, .pulse { animation: none !important; }
+/* ช่องสแกน/รับเงิน – ให้อ่านง่าย */
+#scan-input, #cash { font-family: var(--font-body); font-weight: 600; }
+
+/* ป้าย “รายการรวม/ยอดรวม” ฝั่งขวา */
+.totals, .totals .label-total { font-family: var(--font-heading); }
+
+
+/* ปุ่มไอคอนเล็ก */
+.icon-btn{
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--muted);
+  padding: 6px 8px;
+  border-radius: 10px;
+  line-height: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,.05);
+}
+.icon-btn:hover{ color: var(--text); box-shadow:0 6px 14px rgba(0,0,0,.08); }
+
+/* แถวคลิกเพื่อลบ */
+.cart tbody tr{ cursor: pointer; }
+.cart tbody tr:hover{ background: #f8fafc; }
+
+/* แต่ถ้าคลิกบน .qty หรือปุ่ม จะไม่ถือว่าเป็นการลบ */
+.cart .qty, .cart .qty * , .cart td button { cursor: default; }
+
+/* === Force light theme for Receipt Center (override inline dark) === */
+#np-overlay { background: rgba(0,0,0,.28) !important; } /* ฉากจางหลังโมดัล */
+
+#np-overlay > div{
+  background:#fff !important; color:#0f172a !important;
+  border:1px solid var(--border) !important; border-radius:16px !important;
+  box-shadow:0 20px 50px rgba(0,0,0,.18) !important;
+  font-family: system-ui,-apple-system,Segoe UI,Roboto,sans-serif !important;
 }
 
-#qr-pay-wrap { display: none; justify-content: center; margin-top: 12px; }
-#qr-pay-wrap.show { display: flex; }
-#qr-pay-wrap .qr-box {
-  display: inline-flex; flex-direction: column; align-items: center; gap: 8px;
-  padding: 12px 14px; border-radius: 12px; background: rgba(0,0,0,.04);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.6);
+/* การ์ด/หัวข้อ/ตัวหนังสือด้านในให้สว่าง */
+#np-overlay .receipt-card{
+  background:#fff !important; color:var(--text) !important;
+  border:1px dashed var(--border) !important;
 }
-#qr-img {
-  width: 180px; height: auto; display: block; background: #fff; border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0,0,0,.12);
+#np-overlay h2, #np-overlay h3 { color:var(--text) !important; }
+
+/* ปุ่มต่าง ๆ ให้เป็นโทนสว่าง */
+#np-overlay #rc-close,
+#np-overlay .btn-preview{
+  background:#fff !important; color:var(--text) !important;
+  border:1px solid var(--border) !important; border-radius:10px !important;
 }
-#qr-pay-wrap .qr-amount { font-size: 25px; opacity: .9; }
-
-/* ป้องกันซ่อนทันทีเมื่อคลิกในโซน QR (ให้มันรับโฟกัสได้) */
-#qr-pay-wrap { outline: none; }
-#qr-pay-wrap:focus-within { /* คงแสดงไว้ถ้าโฟกัสอยู่ในนี้ */ }
-
-.qr-amount{
-  display:flex;
-  flex-direction:column;      /* เรียงบน→ล่าง */
-  align-items:center;
-  gap:4px;                    /* ระยะห่างระหว่าง 2 บรรทัด */
-}
-
-.qr-count{
-  font-size:15px;
-  opacity:.7;
-  margin:0;                   /* เอา margin-left เดิมออก */
-  white-space:nowrap;
-}
-
-
+#np-overlay .btn-preview:hover{ background:#f1f5f9 !important; }
