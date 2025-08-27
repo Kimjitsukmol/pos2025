@@ -1872,8 +1872,9 @@ function showReceiptPopup(payload, items) {
 
   // ปิดเมื่อครบเวลา/คลิก
   const close = () => wrap.remove();
-  setTimeout(close, 10000);
+  setTimeout(close, 5000);
   card.addEventListener('click', close, { once:true });
   // คลิกที่ที่ว่างก็กดปิดได้
   wrap.addEventListener('click', (e) => { if (e.target === wrap) close(); }, { once:true });
 }
+
