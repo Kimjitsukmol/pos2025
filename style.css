@@ -558,3 +558,74 @@ h1, header h1, .title, .btn, button, .tabs button {
   border:1px solid var(--border) !important; border-radius:10px !important;
 }
 #np-overlay .btn-preview:hover{ background:#f1f5f9 !important; }
+
+
+/* === Mini Receipt (10s) === */
+#mini-receipt{
+  position: fixed; inset: 0; z-index: 10000;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent;           /* ไม่บดบังจอ */
+  pointer-events: auto;
+  animation: mr-fade-in .15s ease;
+}
+@keyframes mr-fade-in{ from { opacity: 0 } to { opacity: 1 } }
+
+#mini-receipt .mr-card{
+  width: min(360px, 92vw);
+  background: #fff; color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.18);
+  padding: 12px;
+  font-family: var(--font-body, system-ui,-apple-system,Segoe UI,Roboto,sans-serif);
+  cursor: pointer; /* คลิกเพื่อปิด */
+}
+
+#mini-receipt .mr-head{
+  display:flex; justify-content:space-between; align-items:baseline; gap:8px;
+  margin-bottom: 6px;
+}
+#mini-receipt .mr-head .shop{ font-weight: 800; font-family: var(--font-heading,"Kanit",system-ui,-apple-system,Segoe UI,Roboto,sans-serif); }
+#mini-receipt .mr-head .dt{ color:#64748b; font-size:12px; }
+
+#mini-receipt .mr-body{
+  border-top:1px dashed var(--border);
+  border-bottom:1px dashed var(--border);
+  padding:6px 0; margin:6px 0;
+}
+#mini-receipt .mr-line{
+  display:grid; grid-template-columns: 1fr auto auto; gap:8px; align-items:center;
+  font-size: 13px;
+}
+#mini-receipt .mr-line .n{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#mini-receipt .mr-line .p{ color:#475569; }
+#mini-receipt .mr-line .t{ text-align:right; font-variant-numeric: tabular-nums; }
+
+#mini-receipt .mr-more{ text-align:center; color:#64748b; font-size:12px; margin-top:4px; }
+
+#mini-receipt .mr-foot{
+  display:grid; gap:2px; font-size:13px;
+}
+#mini-receipt .mr-foot b{
+  font-weight:900; color: var(--accent-2);
+}
+
+
+/* === Mini Receipt (ยึดตำแหน่งกลางกล่องรายการ) === */
+#mini-receipt{
+  position: fixed; inset: 0; z-index: 10000;
+  background: transparent;
+  pointer-events: auto;
+}
+
+#mini-receipt .mr-card{
+  position: fixed;                    /* วางด้วย top/left จาก JS */
+  transform: translate(-50%, -50%);   /* ให้พิกัดเป็นกึ่งกลาง */
+  width: min(360px, 92vw);
+  background: #fff; color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.18);
+  padding: 12px;
+  cursor: pointer;                    /* แตะเพื่อปิด */
+}

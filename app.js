@@ -305,11 +305,14 @@ document.addEventListener('DOMContentLoaded', startLiveClock);
     if (e.repeat) return;
 
     // Numpad .
+   // Numpad .
     if (e.code === 'NumpadDecimal') {
-      e.preventDefault();   // ❗️ห้ามพิมพ์ .
+      e.preventDefault();
       focusScan();
+      hideQR();           // ✅ บังคับซ่อน กรณี blur ของ cash ไม่ยิง/ติด mouseInQR
       return;
     }
+
 
     // Numpad +
   // Numpad +  = โฟกัสช่องรับเงิน (ไม่เพิ่มจำนวนสินค้า)
@@ -321,6 +324,20 @@ if (e.code === 'NumpadAdd') {
 
   });
 })();
+
+document.addEventListener('focusin', (e) => {
+  if (!qrWrap) return;
+  // ถ้าโฟกัสไปที่ช่องรับเงิน -> ให้โผล่ตาม logic เดิม ไม่ยุ่ง
+  if (e.target === cashInput || e.target === cashEl) return;
+  // ถ้าโฟกัสอยู่ในกล่อง QR เอง (แทบไม่มี) -> ข้าม
+  if (qrWrap.contains(e.target)) return;
+
+  // โฟกัสที่อื่นทั้งหมด -> ซ่อน
+  hideQR();
+});
+
+
+
 
 
 
@@ -955,12 +972,17 @@ if (scanInput) {
 
 
   // เคลียร์ช่องรับเงินทุกครั้งที่โฟกัสช่องสแกน
+  // เคลียร์ช่องรับเงินทุกครั้งที่โฟกัสช่องสแกน + ซ่อน QR ทันที
+if (scanInput) {
   scanInput.addEventListener('focus', () => {
+    hideQR();                     // ✅ ซ่อนทันที ไม่สน mouseInQR
     if (cashEl) {
-      cashEl.value = '';   // หรือใช้ '0' ถ้าอยากให้แสดงเลขศูนย์แทน
-      calcChange();        // อัปเดตเงินทอนด้วย (ให้เป็น 0 ทันที)
+      cashEl.value = '';
+      calcChange();
     }
   });
+}
+
 
 
 // ====== ปุ่มต่างๆ (มีการ์ด ?. ป้องกัน null) ======
@@ -1024,40 +1046,33 @@ async function finalizeSale() {
 
   if (cashTimer) { clearTimeout(cashTimer); cashTimer = null; }
 
-  // 1) เตรียมข้อมูล + ฝัง saleId (กันสับสน/กดซ้ำ)
   const payload = buildSalePayload();
   payload.saleId = Date.now().toString();
   payload.itemsText += ` [#${payload.saleId}]`;
 
-  // 2) ออกใบเสร็จ & เก็บประวัติ — ทำเลย (รู้สึกเร็ว)
+  // ✅ เก็บ snapshot รายการก่อนเคลียร์
+  const itemsSnapshot = cart.map(it => ({ ...it }));
+
   try {
-    const html = buildReceiptHTML(payload, cart);
+    const html = buildReceiptHTML(payload, itemsSnapshot); // ใช้ snapshot
     const filename = `receipt_${payload.saleId}.html`;
-
-    // ไม่ดาวน์โหลดอัตโนมัติ
-    if (AUTO_DOWNLOAD_RECEIPT) {
-      downloadTextFile(filename, html);
-    }
-
-    // เก็บเข้า “ศูนย์ใบเสร็จ”
+    if (AUTO_DOWNLOAD_RECEIPT) downloadTextFile(filename, html);
     saveReceiptHistory(filename, html, payload.datetime, payload.total, payload.cash, payload.change);
-  } catch (e) {
-    console.error('สร้างใบเสร็จล้มเหลว', e);
-  }
+  } catch (e) { console.error('สร้างใบเสร็จล้มเหลว', e); }
 
-  // 3) เคลียร์ UI ทันที (FAST CLOSE)
+  // ✅ แสดงป๊อปอัปเล็กกลางจอ 10 วินาที
+  showReceiptPopup(payload, itemsSnapshot);
+
+  // เคลียร์/พูดขอบคุณ (เดิม)
   clearCart();
   if (cashEl) cashEl.value = '';
   toggleGrandShrink(false);
   calcChange();
-  speakThai('ขอบคุณค่ะ');
-
-  // 4) บันทึกลงชีตแบบเบื้องหลัง (Fire-and-forget)
+  speakThai('ขอบคุณค่ะ'); // กด Enter รับเงินแล้วพูดขอบคุณ ณ จุดนี้
   saveSaleRow(payload).catch(err => console.error('บันทึกชีตไม่สำเร็จ', err));
-
-  // 5) ปลดล็อกหลังกันซ้ำครบเวลา
   setTimeout(() => { submitting = false; }, ENTER_GUARD_MS);
 }
+
 
 // ====== สร้าง HTML ใบเสร็จแบบง่าย ======
 function buildReceiptHTML(payload, items) {
@@ -1262,7 +1277,7 @@ appTitle?.addEventListener('click', async () => {
 
   salesPopup.classList.remove('hidden');
   if (salesTimer) clearTimeout(salesTimer);
-  salesTimer = setTimeout(()=> salesPopup.classList.add('hidden'), 10000);
+  salesTimer = setTimeout(()=> salesPopup.classList.add('hidden'), 15000);
 
   // ✅ ดึงข้อมูลสรุปยอด
   const s = await fetchSalesSummary();
@@ -1785,3 +1800,80 @@ function animateAddToCartVisual(labelText = '+1') {
   } catch (_) {}
 }
 
+// === Mini Receipt Popup (10s auto hide) ===
+function showReceiptPopup(payload, items) {
+  const shop = document.getElementById('app-title')?.textContent?.trim() || 'ร้านของฉัน';
+  const dt   = payload?.datetime || new Date().toLocaleString('th-TH');
+
+  // จำกัดจำนวนบรรทัดเพื่อให้ "เล็ก" อ่านง่าย
+  const MAX_LINES = 6;
+  const shown = (items || []).slice(0, MAX_LINES);
+  const more  = (items?.length || 0) - shown.length;
+
+  const lines = shown.map(it => `
+    <div class="mr-line">
+      <span class="n">${it.name}</span>
+      <span class="p">${format(it.price)} × ${it.qty}</span>
+      <span class="t">${format(it.price * it.qty)}</span>
+    </div>
+  `).join('') + (more > 0 ? `<div class="mr-more">… และอีก ${more} รายการ</div>` : '');
+
+  // สร้างโครง popup (non-blocking, pointer-events เฉพาะกล่อง)
+  const wrap = document.createElement('div');
+  wrap.id = 'mini-receipt';
+  wrap.innerHTML = `
+    <div class="mr-card" role="dialog" aria-live="polite">
+      <div class="mr-head">
+        <div class="shop">${shop}</div>
+        <div class="dt">${dt}</div>
+      </div>
+      <div class="mr-body">
+        ${lines || '<div class="mr-empty">ไม่มีรายการ</div>'}
+      </div>
+      <div class="mr-foot">
+        <div>ยอดรวม <b>${format(payload.total)}</b></div>
+        <div>รับเงิน ${format(payload.cash)}</div>
+        <div>เงินทอน ${format(payload.change)}</div>
+      </div>
+    </div>
+  `;
+      document.body.appendChild(wrap);
+
+  // ===== คำนวณจุดกึ่งกลางของ "กล่องรายการสินค้า" =====
+  function getCartBox() {
+    // ไล่หา element ที่เป็นกล่องรายการ (เผื่อโปรเจกต์ใช้ชื่อไม่เหมือนกัน)
+    const candidates = [
+      '#cart-area', '#cart-panel', '#cart-box', '#cart-wrap',
+      '.cart-wrap', '.cart-container', '.cart-area', '.cart', '#cart-body'
+    ];
+    for (const sel of candidates) {
+      const el = document.querySelector(sel);
+      if (el) return el;
+    }
+    return null;
+  }
+
+  const card = wrap.querySelector('.mr-card');
+  let cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+
+  const cartBox = getCartBox();
+  if (cartBox) {
+    const r = cartBox.getBoundingClientRect();
+    cx = r.left + r.width  / 2;
+    cy = r.top  + r.height / 2;
+  }
+
+  // วางการ์ดไว้ "กลางกล่องรายการ"
+   // วางการ์ดไว้ "กลางกล่องรายการ" แล้วขยับขึ้นอีกนิด
+    const OFFSET_Y = -0.08 * (cartBox ? cartBox.getBoundingClientRect().height : 500);
+  card.style.top = `${cy + OFFSET_Y}px`;
+
+
+
+  // ปิดเมื่อครบเวลา/คลิก
+  const close = () => wrap.remove();
+  setTimeout(close, 10000);
+  card.addEventListener('click', close, { once:true });
+  // คลิกที่ที่ว่างก็กดปิดได้
+  wrap.addEventListener('click', (e) => { if (e.target === wrap) close(); }, { once:true });
+}
