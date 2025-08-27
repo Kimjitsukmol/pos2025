@@ -629,3 +629,64 @@ h1, header h1, .title, .btn, button, .tabs button {
   padding: 12px;
   cursor: pointer;                    /* แตะเพื่อปิด */
 }
+
+
+/* ===== Fit-to-screen lock (scale whole app proportionally) ===== */
+#fit-root{
+  /* ขนาดหน้าแบบออกแบบ (ปรับได้): กว้าง 1200 x สูง 700 */
+  --design-w: 1200;                     /* px */
+  --design-h: 700;                      /* px */
+  /* สเกล = ด้านสั้นของจอ / ด้านออกแบบ → คงสัดส่วนแนวตั้ง/แนวนอน */
+  --k: min(calc(100vw / var(--design-w)), calc(100vh / var(--design-h)));
+
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;              /* ชิดบนแบบในภาพ */
+  justify-content: center;              /* จัดกลางแนวนอน */
+  overflow: auto;                       /* เผื่อกรณีจอเตี้ยมากๆ */
+  background: var(--bg);
+}
+
+/* ความกว้างคงที่ตามแบบ แล้วคูณสเกลทั้งก้อน */
+#fit-root > .app{
+  width: calc(var(--design-w) * 1px);
+  transform: scale(var(--k));
+  transform-origin: top center;
+  /* ย้าย margin/padding จาก .app ไปลูกภายใน เพื่อลดช่องว่างหลัง scale */
+  margin: 0;
+}
+
+/* บังคับตารางเป็น 2 คอลัมน์เสมอ (ล็อคเลย์เอาต์ตามภาพ) */
+.grid{
+  grid-template-columns: 1.3fr 0.7fr !important;
+}
+
+/* ฟอนต์/เลขใหญ่ให้สมส่วนเมื่อย่อมาก ๆ */
+.big-total{
+  /* ลด overscale เมื่อจอเล็กมาก แต่ยังรักษาความเด่น */
+  font-size: clamp(54px, 8vmin, 96px);
+}
+
+/* ปรับหัวตาราง/ปุ่มให้ยังคลิกง่ายหลังจากสเกล */
+.cart th, .cart td { padding: 8px; }
+button { padding: 10px 14px; }
+
+/* โมดอล/ป๊อปอัป (ซึ่งถูก append ใส่ body) ให้ไม่โดนสเกลทับ และคงขนาดอ่านง่าย */
+#np-overlay,
+.held-modal-backdrop,
+.sales-popup{
+  font-size: clamp(12px, 1.8vmin, 16px);
+}
+
+/* มือถือแนวตั้ง: ไม่แสดงชื่อร้าน เพื่อให้ช่องสแกน/ตะกร้า/นาฬิกาไม่ถูกบีบ */
+@media (orientation: portrait) and (max-width: 640px){
+  #app-title{ display:none !important; }
+
+  /* เสริมให้พื้นที่หัวแถวโปร่งและย่อส่วนประกอบให้พอดี */
+  #scan-input{ width: clamp(160px, 50vw, 320px); }
+  .cart-btn{ font-size: clamp(12px, 3vmin, 16px); }
+  .clock{ font-size: clamp(14px, 4vmin, 22px); }
+}
+
+
