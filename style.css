@@ -1,0 +1,486 @@
+:root { --bg:#0f172a; --card:#111827; --text:#e5e7eb; --muted:#94a3b8; --accent:#22c55e; --danger:#ef4444; }
+* { box-sizing: border-box; }
+html,body { margin:0; padding:0; background:var(--bg); color:var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+.app { max-width: 1200px; margin: 0 auto; padding: 16px; }
+header { display:flex; gap:16px; align-items:center; justify-content: space-between; margin-bottom: 12px; }
+h1 { margin:0; font-size: 22px; }
+.scan { display:flex; gap:8px; flex:1; justify-content:flex-end; }
+#scan-input { width: 120px; padding: 10px 12px; border-radius: 12px; border:1px solid #334155; background:#0b1220; color:var(--text); outline:none; }
+#scan-input::placeholder { color: #64748b; }
+/* ให้คอนเทนเนอร์ของช่องสแกนเป็นจุดอ้างอิง (กันภาพล้น) */
+/* คอนเทนเนอร์ของช่องสแกน: ให้แสดงผลเกินขอบได้เวลาขยาย/เด้ง */
+.scan{
+  position: relative;
+  display: flex;
+  align-items: center;
+  overflow: visible;             /* สำคัญสำหรับเอฟเฟกต์เด้ง */
+}
+
+/* สถานะปกติ */
+#scan-input{
+  width: clamp(220px, 28vw, 380px);
+  background: #0b1220;
+  border: 1px solid #334155;
+  color: #e5e7eb;
+  outline: none;
+
+  /* เตรียมอนิเมชัน */
+  transform-origin: left center; /* ขยาย/เด้งอิงด้านซ้าย */
+  will-change: transform, box-shadow, background-color, border-color;
+  transition:
+    background-color .15s ease,
+    border-color .15s ease,
+    color .15s ease,
+    box-shadow .2s ease;
+}
+
+/* โฟกัส: "นูน" + เด้งไปทางซ้าย + ขยายชัด ๆ */
+#scan-input:focus,
+#scan-input:focus-visible{
+  animation: scan-bump-left .28s cubic-bezier(.2,.9,.25,1.3) both;
+
+  /* โทนเข้ม + ขอบชัด + เงาหลายชั้นให้นูน */
+  background: #0a0f1c;
+  border-color: #60a5fa;
+  box-shadow:
+    0 0 0 3px rgba(96,165,250,.28),     /* วงเรืองแสงฟ้า */
+    0 18px 38px rgba(0,0,0,.50),        /* เงาหลัก ลึก */
+    0 8px 16px rgba(0,0,0,.35),         /* เงารอง */
+    inset 0 1px 0 rgba(255,255,255,.06),/* ไฮไลต์ด้านบนให้ดูนูน */
+    inset 0 -1px 0 rgba(0,0,0,.30);     /* ไล่เงาด้านล่าง */
+  color: #fff;
+}
+
+/* keyframes: เด้งไปทางซ้ายเล็กน้อยแล้วค่อย ๆ เซตตัว */
+@keyframes scan-bump-left{
+  0%   { transform: scale(1) translateX(0) translateZ(0); }
+  50%  { transform: scale(1.14) translateX(-14px) translateZ(0); } /* นูนใหญ่ + เด้งซ้าย */
+  80%  { transform: scale(1.10) translateX(-8px) translateZ(0);  } /* คืนตัวเล็กน้อย */
+  100% { transform: scale(1.12) translateX(-10px) translateZ(0); } /* จบด้วยนูนกำลังดี */
+}
+
+/* placeholder จางลงตอนโฟกัส */
+#scan-input::placeholder{
+  color: #64748b;
+  transition: color .15s ease, opacity .15s ease;
+}
+#scan-input:focus::placeholder{ color:#94a3b8; opacity:.6; }
+
+/* เคารพผู้ใช้ที่ลดแอนิเมชัน */
+@media (prefers-reduced-motion: reduce){
+  #scan-input{ transition: none; }
+  #scan-input:focus{ animation: none; }
+}
+
+
+button { padding: 10px 14px; border-radius: 10px; border:1px solid #334155; background:#0b1220; color:var(--text); cursor:pointer; }
+button:hover { border-color:#475569; }
+button.danger { background:#1a0b0b; border-color:#7f1d1d; }
+
+
+.grid { display:grid; grid-template-columns: 1.3fr 0.7fr; gap:16px; }
+.left, .right { background: var(--card); border:1px solid #1f2937; border-radius: 16px; padding: 12px; }
+
+
+.cart { width:100%; border-collapse: collapse; }
+.cart th, .cart td { border-bottom: 1px dashed #334155; padding: 8px; }
+.cart th { text-align:left; color:var(--muted); font-weight:600; }
+.cart td.num, .cart th.num { text-align:right; }
+.cart td .qty { display:flex; gap:6px; justify-content:flex-end; align-items:center; }
+.qty button { padding: 4px 8px; }
+
+
+.panel { display:flex; flex-direction: column; gap:10px; }
+.row { display:flex; align-items:center; gap:8px; }
+.row label { min-width: 90px; color:var(--muted); }
+.row input { flex:1; padding: 10px 12px; border-radius: 10px; border:1px solid #334155; background:#0b1220; color:var(--text); }
+.totals { display:flex; flex-direction: column; gap:6px; font-size: 18px; }
+.totals span { font-weight:700; color:var(--accent); }
+.change { font-size: 18px; margin-top: 6px; }
+.actions { display:grid; grid-template-columns: repeat(2, 1fr); gap:8px; margin-top:8px; }
+.hint { color:#93c5fd; font-size:12px; margin-top:8px; opacity:0.85; }
+
+/* ใช้ในหน้า “ดูใบเสร็จ” ที่เปิดด้วย window.open */
+.receipt-list { max-width: 800px; margin: 24px auto; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+.receipt-card { border:1px dashed #334155; border-radius:12px; padding:12px; margin-bottom:12px; background:#0b1220; color:#e5e7eb; }
+.receipt-card h3 { margin:0 0 6px 0; font-size:16px; }
+.receipt-card pre { white-space:pre-wrap; margin:0; }
+
+
+
+footer { margin-top: 12px; color:var(--muted); text-align:center; }
+
+
+/* iPad แนวตั้ง: บังคับกลับเป็น 2 คอลัมน์ */
+@media (orientation: portrait) and (min-width: 600px) {
+  .grid { grid-template-columns: 1.3fr 0.7fr; }
+  /* ให้ความกว้างช่องสแกนกลับมาแบบเดิม (ไม่เต็มแถว) */
+  #scan-input { width: clamp(220px, 28vw, 380px); }
+}
+
+
+/* คอนเทนเนอร์ของช่องรับเงิน: อนุญาตให้แอนิเมชันล้นออกนิดหน่อย */
+.row.pay{
+  position: relative;
+  overflow: visible;
+}
+
+/* สถานะปกติของช่องรับเงิน */
+#cash{
+  /* ถ้าตอนนี้ใช้ flex:1 อยู่แล้ว ไม่ต้องกำหนด width ก็ได้ */
+  background: #0b1220;
+  border: 1px solid #334155;
+  color: #e5e7eb;
+  outline: none;
+
+  /* เตรียมแอนิเมชันแบบเดียวกับ scan */
+  transform-origin: left center;
+  will-change: transform, box-shadow, background-color, border-color;
+  transition:
+    background-color .15s ease,
+    border-color .15s ease,
+    color .15s ease,
+    box-shadow .2s ease;
+}
+
+/* โฟกัส: นูน+เด้งซ้าย (ใช้ keyframes เดียวกับ scan) */
+#cash:focus,
+#cash:focus-visible{
+  animation: scan-bump-left .28s cubic-bezier(.2,.9,.25,1.3) both;
+
+  /* ทำให้เด่นขึ้น */
+  background: #0a0f1c;
+  border-color: #f760fa;
+  box-shadow:
+    0 0 0 3px rgba(96,165,250,.28),
+    0 18px 38px rgba(0,0,0,.50),
+    0 8px 16px rgba(0,0,0,.35),
+    inset 0 1px 0 rgba(255,255,255,.06),
+    inset 0 -1px 0 rgba(0,0,0,.30);
+  color: #fff;
+}
+
+/* โทน placeholder ให้จาง/อ่านง่ายขึ้น */
+#cash::placeholder{
+  color: #64748b;
+  transition: color .15s ease, opacity .15s ease;
+}
+#cash:focus::placeholder{ color:#94a3b8; opacity:.6; }
+
+/* เคารพผู้ใช้ที่ลดแอนิเมชัน */
+@media (prefers-reduced-motion: reduce){
+  #cash{ transition: none; }
+  #cash:focus{ animation: none; }
+}
+
+
+
+
+/* ขนาด/น้ำหนักของยอดรวมให้เด่น */
+.big-total {
+  font-size: 120px;        /* ปรับได้ตามชอบ: 40–56px */
+  font-weight: 900;
+  line-height: 1.1;
+  display: inline-block;
+}
+
+/* ถ้าอยากให้เด่นขึ้นอีก ใส่พื้นหลังอ่อน ๆ + ขอบมน (ไม่บังคับ) */
+
+
+#app-title { cursor: pointer; }
+
+.sales-popup {
+  position: fixed;
+  right: 16px;
+  top: 16px;
+  max-width: 360px;
+  background: var(--card);
+  border: 1px solid #334155;
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+  color: var(--text);
+  z-index: 9999;
+}
+.sales-popup.hidden { display: none; }
+.sales-popup h3 { margin: 0 0 6px 0; font-size: 16px; }
+.sales-popup .row { display:flex; justify-content:space-between; margin: 4px 0; }
+.sales-popup .num { font-weight: 800; color: var(--accent); }
+.sales-popup small { color: var(--muted); }
+
+/* ย่อขนาดยอดรวมครึ่งหนึ่งเมื่อมีการคำนวณเงินทอน */
+/* ยอดรวมให้ใหญ่เด่น แล้วค่อยย่อเมื่อคำนวณเงินทอน */
+.totals .grand {
+  font-size: 56px;         /* ขนาดปกติ (ใหญ่) */
+  font-weight: 900;
+  line-height: 1.05;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+  transform-origin: right center;
+}
+
+.totals .grand.shrink {
+  transform: scale(0.5);    /* ย่อครึ่งหนึ่ง */
+  opacity: 0.9;
+}
+
+
+/* ตอนพิมพ์ใบเสร็จไม่ต้องย่อ */
+@media print {
+  .totals .grand { transform: none !important; }
+}
+
+/* ย่อ/ขยายเฉพาะตัวเลขยอดรวม (#subtotal) */
+/* ให้สองตัวนี้ย่อ/ขยายได้ด้วยทรานซิชัน */
+#subtotal,
+#change {
+  display: inline-block;
+  transform-origin: right center;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+/* ย่อครึ่งหนึ่ง */
+#subtotal.shrink,
+#change.shrink {
+  transform: scale(0.5);
+  opacity: 0.9;
+}
+
+/* ปุ่มตะกร้าพักบิล */
+.cart-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #334155;
+  background: #0b1220;
+  color: #e5e7eb;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0,0,0,.25);
+}
+.cart-btn:hover { background: #131c2e; }
+
+/* แบดจ์ตัวเลข */
+.cart-btn .badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 12px;
+  line-height: 20px;
+  text-align: center;
+  border: 2px solid #0b1220;
+  display: none; /* ซ่อนเมื่อ = 0 */
+}
+
+/* modal เรียกบิลที่พักไว้ */
+.held-modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.6);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+  z-index: 10000;
+}
+.held-modal {
+  width: min(920px, 100%);
+  max-height: min(86vh, 100%);
+  background: #0b1220;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.held-modal header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border-bottom: 1px solid #334155; color: #e5e7eb;
+}
+.held-list { overflow: auto; }
+.held-item {
+  display: grid; grid-template-columns: 1fr auto auto;
+  gap: 10px; align-items: center;
+  padding: 12px 14px; border-bottom: 1px solid #233047;
+  color: #d1d5db;
+}
+.held-item strong { color: #e5e7eb; }
+.held-actions { display: inline-flex; gap: 8px; }
+.held-actions button {
+  padding: 6px 10px; border-radius: 10px; border: 1px solid #334155;
+  background: #1f2937; color: #e5e7eb; cursor: pointer;
+}
+.held-actions button:hover { background: #263143; }
+
+.clock{
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 1;
+  /* ใหญ่ขึ้น และ responsive: อย่างน้อย 24px, ปกติราว 40px บนเดสก์ท็อป */
+  font-size: clamp(24px, 4.5vw, 42px);
+  color: #e5e7eb;
+  white-space: nowrap;
+}
+
+/* ---------- แถวสินค้าที่เพิ่งถูกเพิ่ม ---------- */
+#cart-body tr.cart-added {
+  animation: cartRowPop .55s cubic-bezier(.2,.9,.25,1.2);
+}
+@keyframes cartRowPop{
+  0%   { transform: scale(.98); background: rgba(96,165,250,.10); }
+  45%  { transform: scale(1.02); background: rgba(96,165,250,.18); }
+  100% { transform: scale(1);    background: transparent; }
+}
+
+/* ---------- ปุ่มตะกร้าเด้ง ---------- */
+.cart-btn.btn-bump {
+  animation: cartBtnBump .35s cubic-bezier(.2,.9,.25,1.2);
+}
+@keyframes cartBtnBump{
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.12) translateY(-2px); }
+  100% { transform: scale(1.06); }
+}
+
+/* ---------- ชิปที่บินจากช่องสแกนไปตะกร้า ---------- */
+.fly-chip{
+  position: fixed; z-index: 9999; pointer-events: none;
+  padding: 6px 10px; border-radius: 999px;
+  background: #0ea5e9; color: #fff; font-weight: 700; font-size: 12px;
+  box-shadow: 0 10px 22px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.2);
+  transform: translate(-50%,-50%); /* เราจะเลื่อนด้วย translate เพิ่มเติมผ่าน WAAPI */
+  will-change: transform, opacity;
+}
+
+/* ---------- ทำยอดรวมเด้งเบา ๆ ---------- */
+#subtotal.pulse {
+  animation: totalPulse .45s ease;
+}
+@keyframes totalPulse{
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+/* แถวล่าสุด: ขยายค้าง + โทนเด่น */
+#cart-body tr{
+  transition: transform .18s ease, background-color .18s ease, box-shadow .18s ease;
+  transform-origin: center;
+}
+#cart-body tr.cart-current{
+  /* transform: scale(1.03); */
+  background: rgba(96,165,250,.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+.item-count {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+
+/* ==== Effects for add-to-cart (no setTimeout needed) ==== */
+
+/* 1) ไฮไลต์แถวล่าสุดในตะกร้า */
+.cart-added {
+  animation: cartRowFlash 600ms ease-out;
+}
+@keyframes cartRowFlash {
+  0%   { background: rgba(0, 200, 0, 0.18); }
+  40%  { background: rgba(0, 200, 0, 0.28); }
+  100% { background: transparent; }
+}
+
+/* 2) ปุ่มตะกร้าดีดตัวเล็กน้อย */
+.btn-bump {
+  animation: btnBump 380ms cubic-bezier(.2,.9,.25,1.2);
+  transform-origin: center;
+}
+@keyframes btnBump {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+/* 3) เด้งยอดรวมสั้น ๆ */
+.pulse {
+  animation: pulseOnce 360ms ease-out;
+}
+@keyframes pulseOnce {
+  0%   { transform: translateZ(0) scale(1); filter: brightness(1); }
+  40%  { transform: translateZ(0) scale(1.04); filter: brightness(1.25); }
+  100% { transform: translateZ(0) scale(1); filter: brightness(1); }
+}
+
+/* 4) ชิปบินจากช่องสแกน → ปุ่มตะกร้า (สร้างด้วย JS) */
+.fly-chip {
+  position: fixed;
+  left: 0; top: 0;
+  transform: translate(-50%,-50%);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  background: #22c55e;        /* เขียวอ่านง่าย */
+  color: #0b1d0f;
+  box-shadow: 0 6px 16px rgba(0,0,0,.25);
+  z-index: 9999;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+/* (ออปชัน) ถ้าธีมมืดอยู่แล้ว อยากปรับสีให้นุ่มตา */
+@media (prefers-color-scheme: dark) {
+  .fly-chip { background: #34d399; color: #052e16; }
+}
+
+@media (max-width: 680px) {
+  .grid { grid-template-columns: 1fr; }
+  #scan-input { width: 100%; }
+}
+
+/* ลด/ปิดแอนิเมชันสำหรับผู้ใช้ที่ไม่ต้องการการเคลื่อนไหว */
+@media (prefers-reduced-motion: reduce) {
+  .cart-added, .btn-bump, .pulse { animation: none !important; }
+}
+
+#qr-pay-wrap { display: none; justify-content: center; margin-top: 12px; }
+#qr-pay-wrap.show { display: flex; }
+#qr-pay-wrap .qr-box {
+  display: inline-flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 12px 14px; border-radius: 12px; background: rgba(0,0,0,.04);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.6);
+}
+#qr-img {
+  width: 180px; height: auto; display: block; background: #fff; border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.12);
+}
+#qr-pay-wrap .qr-amount { font-size: 25px; opacity: .9; }
+
+/* ป้องกันซ่อนทันทีเมื่อคลิกในโซน QR (ให้มันรับโฟกัสได้) */
+#qr-pay-wrap { outline: none; }
+#qr-pay-wrap:focus-within { /* คงแสดงไว้ถ้าโฟกัสอยู่ในนี้ */ }
+
+.qr-amount{
+  display:flex;
+  flex-direction:column;      /* เรียงบน→ล่าง */
+  align-items:center;
+  gap:4px;                    /* ระยะห่างระหว่าง 2 บรรทัด */
+}
+
+.qr-count{
+  font-size:15px;
+  opacity:.7;
+  margin:0;                   /* เอา margin-left เดิมออก */
+  white-space:nowrap;
+}
+
+
