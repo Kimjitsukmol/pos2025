@@ -96,10 +96,10 @@ button:active{transform:translateY(1px)}
 .qty button{padding:4px 8px}
 
 /* ===== Totals / Change ===== */
-.totals{display:flex;flex-direction:column;gap:8px;font-size:18px}
+.totals{display:flex;flex-direction:column;gap:8px;font-size:18px;color: #a30549 !important;}
 .item-count{font-size:15px;font-weight:600;color:var(--muted);margin-bottom:4px}
 .big-total{
-  font-size:96px;           /* ใหญ่ชัดกลางวัน */
+  font-size:200px;           /* ใหญ่ชัดกลางวัน */
   font-weight:900;line-height:1.05;display:inline-block;
   color:var(--accent-2);    /* เขียวสดแบบภาพตัวอย่าง */
   text-shadow:0 2px 0 rgba(34,197,94,.12);
@@ -450,7 +450,9 @@ footer{margin-top:12px;color:var(--muted);text-align:center}
 #subtotal {                /* หากหน้าคุณใช้ #subtotal เป็นตัวเลขหลัก ให้คุมตรงนี้ด้วย */
   color: #a30549 !important;      /* เขียวสด */
   text-shadow: 0 2px 0 rgba(34,197,94,.12);
+  font-size: clamp(150px, 10vmin, 120px);
 }
+
 
 /* ป้าย/ข้อความคำว่า "ยอดรวม" (ถ้ามีเป็น label แยก) */
 .totals .label-total{
@@ -466,6 +468,7 @@ footer{margin-top:12px;color:var(--muted);text-align:center}
 
 /* ถ้าอยากให้เงินทอนเด่นมาก (เน้นเหมือนยอดรวม) ใช้ขนาดใหญ่/หนา */
 #change .num{
+  font-size: 120px !important;
   font-weight: 900;
   /* ตัวอย่าง: color: #eab308 !important;  เหลือง */
 }
@@ -663,7 +666,7 @@ h1, header h1, .title, .btn, button, .tabs button {
 }
 
 /* ฟอนต์/เลขใหญ่ให้สมส่วนเมื่อย่อมาก ๆ */
-.big-total{
+#change.big-total{
   /* ลด overscale เมื่อจอเล็กมาก แต่ยังรักษาความเด่น */
   font-size: clamp(54px, 8vmin, 96px);
 }
@@ -689,4 +692,9 @@ button { padding: 10px 14px; }
   .clock{ font-size: clamp(14px, 4vmin, 22px); }
 }
 
+/* เลขเงินทอน: กำหนดที่ตัว #change โดยตรง */
+#change {
+  font-size: 150px !important;   /* ปรับตามที่ต้องการ */
+  font-weight: 900;
+}
 

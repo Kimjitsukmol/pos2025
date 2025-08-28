@@ -31,26 +31,28 @@ const changeEl   = el('change');
 
 // คลิกแถว = ลบ, คลิกปุ่มดินสอ = แก้ไข
 if (cartBody) {
+  // คลิกเดี่ยว: ปุ่มดินสอ = เปิดแก้ไข (คงพฤติกรรมเดิม)
   cartBody.addEventListener('click', (e) => {
     const editBtn = e.target.closest('.edit-btn');
+    if (!editBtn) return;
+    const idx = Number(editBtn.dataset.idx);
+    if (!Number.isNaN(idx)) openEditModal(idx);
+  });
+
+  // ดับเบิลคลิกที่แถว: ลบรายการ
+  cartBody.addEventListener('dblclick', (e) => {
     const tr = e.target.closest('tr');
     if (!tr) return;
 
-    // ถ้าเป็นปุ่มแก้ไข → เปิด modal แก้ไข
-    if (editBtn) {
-      const idx = Number(editBtn.dataset.idx);
-      if (!Number.isNaN(idx)) openEditModal(idx);
-      return;
-    }
+    // ถ้าดับเบิลคลิกตรงปุ่ม/ส่วนควบคุมจำนวน ให้ไม่ลบ
+    if (e.target.closest('.qty') || e.target.closest('button') || e.target.closest('.edit-btn')) return;
 
-    // ถ้าคลิกในส่วนควบคุมจำนวน/ปุ่ม ไม่ให้ลบ
-    if (e.target.closest('.qty') || e.target.closest('button')) return;
-
-    // ไม่ใช่ปุ่ม → ถือว่าเป็นการคลิกแถว → ลบรายการ
     const rowIndex = [...cartBody.children].indexOf(tr);
     if (rowIndex > -1) removeLine(rowIndex);
   });
 }
+
+
 
 function focusCash(fillIfNeeded = true) {
   const cash = document.getElementById('cash');
@@ -644,6 +646,7 @@ function renderCart() {
     totalItems += it.qty;
 
     const tr = document.createElement('tr');
+    tr.title = 'ดับเบิลคลิกเพื่อลบ';
 tr.innerHTML = `
   <td>${it.code ?? '-'}</td>
   <td>${it.name}</td>
@@ -905,34 +908,30 @@ if (cashEl) {
 // ====== อินพุตสแกน/พิมพ์ ======
 if (scanInput) {
   scanInput.addEventListener('keydown', (e) => {
-    const isNumpadMinus =
-      e.code === 'NumpadSubtract' ||
-      (e.key === '-' && e.location === KeyboardEvent.DOM_KEY_LOCATION_NUMPAD);
+    const isNumpad = e.location === KeyboardEvent.DOM_KEY_LOCATION_NUMPAD;
 
-    /* 👇 เพิ่มส่วนนี้เข้าไป */
-    // โฟกัส/พร้อมสแกน: กันพิมพ์จุดจาก Numpad .
-    if (e.code === 'NumpadDecimal') {
-      e.preventDefault();         // ห้ามพิมพ์ .
-      scanInput.select?.();       // เลือกทั้งบรรทัด พร้อมยิงสแกนทับ
+    // กันพิมพ์ "." จาก numpad และใช้เป็นคีย์ลัดไปช่องสแกน (select ทับ)
+    if (isNumpad && (e.key === '.' || e.code === 'NumpadDecimal')) {
+      e.preventDefault();
+      scanInput.select?.();
       return;
     }
-    // คีย์ลัดเพิ่มจำนวน: กันพิมพ์ + จาก Numpad +
-    // คีย์ลัด: Numpad + = ไปช่องรับเงิน
-    if (e.code === 'NumpadAdd') {
-      e.preventDefault();     // ห้ามพิมพ์ +
+
+    // คีย์ลัด: Numpad "+" = โฟกัสไปช่องรับเงิน (ห้ามพิมพ์ +)
+    if (isNumpad && (e.key === '+' || e.code === 'NumpadAdd')) {
+      e.preventDefault();
       focusCash(true);
       return;
-}
+    }
 
-    /* 👆 จบส่วนที่เพิ่ม */
+    // คีย์ลัด: Numpad "-" = ลดจำนวน (กันกดค้าง)
+    const isNumpadMinus =
+      (isNumpad && e.key === '-') || e.code === 'NumpadSubtract';
 
-    // กันกดค้างสำหรับคีย์ลัด
     if ((e.key === 'Enter' || isNumpadMinus) && e.repeat) {
       e.preventDefault();
       return;
     }
-
-    // ลดจำนวน (คีย์ลัด: Numpad -)
     if (isNumpadMinus) {
       e.preventDefault();
       if (Array.isArray(cart) && cart.length > 0) decLatestLine();
