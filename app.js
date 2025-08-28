@@ -756,7 +756,7 @@ function holdBillMulti() {
     // เคลียร์ทันทีตามที่ต้องการ
     clearCart();
     renderCart?.();
-    toast('พักบิลแล้ว');
+    toast('พักบิล');
   } catch (e) {
     console.error('[holdBillMulti] error:', e);
     toast('พักบิลไม่สำเร็จ');
@@ -847,7 +847,7 @@ function resumeHeldBill(id) {
     saveHeldList(list);
     updateHeldBadge();
 
-    toast('เรียกบิลแล้ว');
+    // toast('เรียกบิลแล้ว');
   } catch (e) {
     console.error('[resumeHeldBill] error:', e);
     toast('เรียกบิลไม่สำเร็จ');
