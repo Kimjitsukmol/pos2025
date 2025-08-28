@@ -54,7 +54,7 @@ if (cartBody) {
 
 
 
-function focusCash(fillIfNeeded = true) {
+function focusCash(fillIfNeeded = false) {
   const cash = document.getElementById('cash');
   if (!cash) return;
   cash.focus();
@@ -320,7 +320,7 @@ document.addEventListener('DOMContentLoaded', startLiveClock);
   // Numpad +  = โฟกัสช่องรับเงิน (ไม่เพิ่มจำนวนสินค้า)
 if (e.code === 'NumpadAdd') {
   e.preventDefault();
-  focusCash(true);
+  focusCash();
   return;
 }
 
@@ -507,6 +507,7 @@ async function addToCartByCode(code) {
   const ctrl = new AbortController();
   let opened = false;
   const openTimer = setTimeout(() => { opened = true; try{ctrl.abort();}catch(_){}
+    speakThai('ไม่มี'); 
     openCreateProductModal(key);
   }, FALLOUT_MS);
 
@@ -535,7 +536,9 @@ async function addToCartByCode(code) {
   } catch(_) { /* เงียบไว้ ให้ fallback จัดการ */ }
 
   // ไม่พบ → เปิดป๊อปอัป (ถ้ายัง)
-  if (!opened) { clearTimeout(openTimer); openCreateProductModal(key); }
+  if (!opened) { clearTimeout(openTimer); 
+    speakThai('ไม่มี');
+    openCreateProductModal(key); }
 }
 
 
@@ -920,7 +923,7 @@ if (scanInput) {
     // คีย์ลัด: Numpad "+" = โฟกัสไปช่องรับเงิน (ห้ามพิมพ์ +)
     if (isNumpad && (e.key === '+' || e.code === 'NumpadAdd')) {
       e.preventDefault();
-      focusCash(true);
+      focusCash();
       return;
     }
 

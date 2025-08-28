@@ -37,7 +37,7 @@ h1{margin:0;font-size:22px;color:#fff}  /* ชื่อร้านขาวช�
 /* ช่องสแกน: พื้นขาว ขอบฟ้าอ่อน อ่านง่าย */
 .scan{display:flex;gap:8px;flex:1;justify-content:flex-end}
 #scan-input{
-  width:clamp(220px,28vw,380px);
+  width: clamp(100px, 15vw, 200px);
   padding:10px 12px;border-radius:12px;border:1px solid #cbd5e1;
   background:#fff;color:var(--text);outline:none;
   transition:box-shadow .2s,border-color .2s;
@@ -199,8 +199,8 @@ footer{margin-top:12px;color:var(--muted);text-align:center}
 
 /* QR amount line — ใช้ id ที่ JS อัปเดต */
 .qr-amount{ text-align:center; line-height:1.15; margin:0; padding:0; }
-#qr-count  { display:block; font-size:13px; color:#475569; margin:2px 0 4px; }
-#qr-amt    { display:inline-block; font-size:24px; font-weight:900; color:#166534; margin:0 4px; }
+#qr-count  { display:block; font-size:16px; color:#475569; margin:2px 0 4px; }
+#qr-amt    { display:inline-block; font-size:44px; font-weight:900; color:#166534; margin:0 4px; }
 
 /* ===== Fix: ป๊อปอัปเรียกบิลที่พักไว้ ไม่ให้เต็มจอ ===== */
 /* ชั้นทับพื้นหลัง */
@@ -696,5 +696,64 @@ button { padding: 10px 14px; }
 #change {
   font-size: 150px !important;   /* ปรับตามที่ต้องการ */
   font-weight: 900;
+}
+
+/* ให้ช่องรับเงินหน้าตาเหมือนช่องสแกน */
+#cash{
+  flex: none;
+  width: 100px;                  /* ปรับได้ตามชอบ */
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;           /* 👈 โค้งมนเท่าช่องสแกน */
+  background: #fff;
+  color: var(--text);
+  outline: none;
+  transition: box-shadow .2s, border-color .2s;
+}
+#cash::placeholder{ color:#94a3b8; }
+#cash:focus{
+  border-color:#60a5fa;
+  box-shadow:0 0 0 3px rgba(96,165,250,.35);
+}
+
+/* ซ่อนลูกศรขึ้น/ลงของ input number (ให้ดูคลีนเหมือนช่องสแกน) */
+#cash::-webkit-outer-spin-button,
+#cash::-webkit-inner-spin-button{ -webkit-appearance: none; margin:0; }
+#cash{ -moz-appearance: textfield; }
+
+
+
+
+
+
+/* ===== ช่องสแกนสินค้า (scan-input) ===== */
+#scan-input:focus,
+#scan-input:focus-visible {
+  background: #eaf3ff;                          /* ฟ้าอ่อน */
+  border-color: #eb2550;                        /* ฟ้าน้ำเงินเข้ม */
+  box-shadow:
+    0 0 0 3px rgba(235, 37, 110, 0.45),              /* วงในฟ้าเข้ม */
+    0 0 0 6px rgba(235, 37, 143, 0.2),              /* วงนอกฟ้าอ่อน */
+    0 10px 22px rgba(0, 0, 0, 0.123);                /* เงา */
+  color: #0f172a;
+}
+
+/* ===== ช่องรับเงิน (cash) ===== */
+#cash:focus,
+#cash:focus-visible {
+  background: #ebffe6;                          /* เหลืองอ่อน */
+  border-color: #08e416;                        /* ส้ม/เหลือง */
+  box-shadow:
+    0 0 0 3px rgba(46, 245, 11, 0.614),             /* วงในส้ม */
+    0 0 0 6px rgba(11, 245, 62, 0.18),             /* วงนอกเหลือง */
+    0 10px 22px rgba(0,0,0,.10);                /* เงา */
+  color: #0f172a;
+}
+
+/* ให้โค้งมน + ทรานสิชันเหมือนกันทั้งสองช่อง */
+#scan-input,
+#cash {
+  border-radius: 12px;
+  transition: box-shadow .2s, border-color .2s, background-color .2s;
 }
 
