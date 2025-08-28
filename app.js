@@ -1879,3 +1879,236 @@ function showReceiptPopup(payload, items) {
   // คลิกที่ที่ว่างก็กดปิดได้
   wrap.addEventListener('click', (e) => { if (e.target === wrap) close(); }, { once:true });
 }
+
+
+
+
+
+// ===== Quick Tiles (สินค้าไม่มีบาร์โค้ด) =====
+const QUICK_TILES_KEY = 'pos_quick_tiles_v1';
+const quickTilesWrap = document.getElementById('quick-tiles');
+const addQuickTileBtn = document.getElementById('add-quick-tile');
+
+// เก็บ/โหลด
+function loadQuickTiles(){
+  const raw = safeGet(QUICK_TILES_KEY);
+  if (!raw) return [];
+  try { const arr = JSON.parse(raw); return Array.isArray(arr) ? arr : []; }
+  catch { return []; }
+}
+function saveQuickTiles(list){ safeSet(QUICK_TILES_KEY, JSON.stringify(list)); }
+
+// เพิ่มไทล์ใหม่
+function addQuickTileEntry(name, price, color){
+  const list = loadQuickTiles();
+  const entry = {
+    id: Date.now(),
+    name: String(name || '').trim(),
+    price: Math.max(0, Number(price) || 0),
+    color: color || pickPastelByName(name)
+  };
+  if (!entry.name || !entry.price) { toast('กรุณาใส่ชื่อ/ราคาให้ถูกต้อง'); return false; }
+  list.unshift(entry);
+  saveQuickTiles(list);
+  renderQuickTiles();
+  toast('เพิ่มปุ่มสินค้าแล้ว');
+  return true;
+}
+
+// เรนเดอร์ไทล์
+function renderQuickTiles(){
+  if (!quickTilesWrap) return;
+  const list = loadQuickTiles();
+  quickTilesWrap.innerHTML = '';
+
+  list.forEach(ent => {
+    const card = document.createElement('button');
+    card.className = 'qtile';
+    card.type = 'button';
+    card.setAttribute('data-color', ent.color || 'green');
+    card.innerHTML = `
+      <div class="name">${escapeHTML(ent.name)}</div>
+      <div class="price">฿${Number(ent.price).toLocaleString('th-TH')}</div>
+    `;
+
+    // ====== กดค้าง 3 วินาที → เปิดแก้ไข/ลบ ======
+    let pressTimer = null;
+    let longPressTriggered = false;
+
+    function startPress(e){
+      // กัน tap ซ้อนบนมือถือ
+      if (e.type === 'touchstart') e.preventDefault();
+      longPressTriggered = false;
+      pressTimer = setTimeout(() => {
+        longPressTriggered = true;
+        openEditQuickTileModal(ent.id);   // 👉 เปิด modal แก้ไข/ลบ
+      }, 3000); // 3 วินาที
+    }
+    function cancelPress(){
+      if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+    }
+
+    card.addEventListener('mousedown', startPress);
+    card.addEventListener('touchstart', startPress, { passive:false });
+    card.addEventListener('mouseup', cancelPress);
+    card.addEventListener('mouseleave', cancelPress);
+    card.addEventListener('touchend', cancelPress);
+
+    // ====== คลิกสั้น → เพิ่มสินค้า ======
+    card.addEventListener('click', (e) => {
+      if (longPressTriggered) { e.preventDefault(); return; }
+      // เพิ่มลงตะกร้าแบบ code=null
+      let idx = cart.findIndex(l =>
+        l.code === null &&
+        l.name === ent.name &&
+        Number(l.price) === Number(ent.price)
+      );
+      if (idx > -1) {
+        cart[idx].qty += 1;
+      } else {
+        cart.push({ code: null, name: ent.name, price: Number(ent.price)||0, qty: 1 });
+        idx = cart.length - 1;
+      }
+      if (typeof moveLineToFront === 'function') moveLineToFront(idx);
+      lastAddedKey = `price:${ent.price}`;   // key สำหรับไฮไลต์ล่าสุด
+      renderCart?.();
+      if (typeof animateAddToCartVisual === 'function') animateAddToCartVisual(`฿${ent.price}`);
+      speakThai?.(`${ent.price} บาท`);
+    });
+
+    quickTilesWrap.appendChild(card);
+  });
+}
+
+
+// ปุ่ม “+ เพิ่มปุ่มสินค้า”
+addQuickTileBtn?.addEventListener('click', openAddQuickTileModal);
+
+// โมดัลสร้างไทล์ใหม่ (ชื่อ + ราคา + สี)
+function openAddQuickTileModal(){
+  const overlay = document.createElement('div');
+  overlay.id = 'np-overlay';
+  overlay.style.display = 'flex';
+
+  const modal = document.createElement('div');
+  modal.innerHTML = `
+    <h2>เพิ่มปุ่มสินค้า (ไม่มีบาร์โค้ด)</h2>
+    <label style="display:block;margin-bottom:8px;">
+      <span>ชื่อสินค้า</span>
+      <input id="qt-name" type="text" placeholder="เช่น ไข่ไก่" />
+    </label>
+    <label style="display:block;margin-bottom:8px;">
+      <span>ราคา (บาท)</span>
+      <input id="qt-price" type="number" min="0" step="1" placeholder="เช่น 5" />
+    </label>
+    <label style="display:block;margin-bottom:8px;">
+      <span>สีการ์ด</span>
+      <select id="qt-color">
+        <option value="green">เขียว</option>
+        <option value="blue">ฟ้า</option>
+        <option value="pink">ชมพู</option>
+        <option value="amber">เหลือง</option>
+        <option value="teal">เขียวอมฟ้า</option>
+      </select>
+    </label>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;">
+      <button id="qt-cancel">ยกเลิก</button>
+      <button class="btn-save" id="qt-save">บันทึก</button>
+    </div>
+  `;
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  const close = ()=> overlay.remove();
+  modal.querySelector('#qt-cancel')?.addEventListener('click', close);
+  modal.querySelector('#qt-save')?.addEventListener('click', () => {
+    const name  = String(modal.querySelector('#qt-name').value || '').trim();
+    const price = Number(modal.querySelector('#qt-price').value || 0);
+    const color = String(modal.querySelector('#qt-color').value || 'green');
+    if (addQuickTileEntry(name, price, color)) close();
+  });
+}
+
+// ยูทิลลดความเสี่ยง XSS เล็กน้อย
+function escapeHTML(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+// เลือกสีพาสเทลอัตโนมัติจากชื่อ (ถ้าไม่เลือกเอง)
+function pickPastelByName(name){
+  const arr = ['green','blue','pink','amber','teal'];
+  let h = 0; for (let i=0;i<name.length;i++) h = (h*31 + name.charCodeAt(i))>>>0;
+  return arr[h % arr.length];
+}
+
+// เริ่มต้น
+document.addEventListener('DOMContentLoaded', renderQuickTiles);
+
+
+function openEditQuickTileModal(id){
+  const list = loadQuickTiles();
+  const ent = list.find(x => x.id === id);
+  if (!ent) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'np-overlay';
+  overlay.style.display = 'flex';
+
+  const modal = document.createElement('div');
+  modal.innerHTML = `
+    <h2>แก้ไขปุ่มสินค้า</h2>
+    <label style="display:block;margin-bottom:8px;">
+      <span>ชื่อสินค้า</span>
+      <input id="qt-edit-name" type="text" value="${escapeHTML(ent.name)}" />
+    </label>
+    <label style="display:block;margin-bottom:8px;">
+      <span>ราคา (บาท)</span>
+      <input id="qt-edit-price" type="number" value="${ent.price}" min="0" step="1" />
+    </label>
+    <label style="display:block;margin-bottom:8px;">
+      <span>สีการ์ด</span>
+      <select id="qt-edit-color">
+        <option value="green">เขียว</option>
+        <option value="blue">ฟ้า</option>
+        <option value="pink">ชมพู</option>
+        <option value="amber">เหลือง</option>
+        <option value="teal">เขียวอมฟ้า</option>
+      </select>
+    </label>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;">
+      <button id="qt-delete">ลบ</button>
+      <button id="qt-cancel">ยกเลิก</button>
+      <button class="btn-save" id="qt-save">บันทึก</button>
+    </div>
+  `;
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  modal.querySelector('#qt-edit-color').value = ent.color || 'green';
+  const close = ()=> overlay.remove();
+
+  modal.querySelector('#qt-cancel')?.addEventListener('click', close);
+
+  modal.querySelector('#qt-delete')?.addEventListener('click', () => {
+    const newList = list.filter(x => x.id !== id);
+    saveQuickTiles(newList);
+    renderQuickTiles();
+    toast('ลบปุ่มแล้ว');
+    close();
+  });
+
+  modal.querySelector('#qt-save')?.addEventListener('click', () => {
+    const name  = String(modal.querySelector('#qt-edit-name').value || '').trim();
+    const price = Math.max(0, Number(modal.querySelector('#qt-edit-price').value || 0));
+    const color = String(modal.querySelector('#qt-edit-color').value || 'green');
+
+    if (!name || !price) { toast('กรุณากรอกชื่อ/ราคาให้ถูกต้อง'); return; }
+
+    ent.name  = name;
+    ent.price = price;
+    ent.color = color;
+
+    saveQuickTiles(list);
+    renderQuickTiles();
+    toast('แก้ไขปุ่มแล้ว');
+    close();
+  });
+}

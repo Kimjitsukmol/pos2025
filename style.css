@@ -757,3 +757,94 @@ button { padding: 10px 14px; }
   transition: box-shadow .2s, border-color .2s, background-color .2s;
 }
 
+
+
+
+
+
+
+/* แถบเครื่องมือเล็กๆ */
+.quick-tiles-toolbar{
+  margin-top:12px; display:flex; justify-content:flex-end;
+}
+.quick-tiles-toolbar button{
+  background:#eef8ff; border-color:#93c5fd; color:#1d4ed8;
+}
+
+/* กริดปุ่มสินค้า */
+.quick-tiles{
+  margin-top:8px;
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap:10px;
+}
+
+/* การ์ดปุ่มสินค้า */
+.qtile{
+  display:flex; flex-direction:column; gap:6px;
+  padding:10px 12px; border:1px solid var(--border); border-radius:14px;
+  background:#ffffff; color:var(--text);
+  box-shadow:0 6px 16px rgba(0,0,0,.06);
+  cursor:pointer; transition:transform .05s ease, box-shadow .2s, filter .2s;
+}
+.qtile:hover{ box-shadow:0 10px 22px rgba(0,0,0,.10); }
+.qtile:active{ transform:translateY(1px); }
+
+/* ชื่อและราคาในปุ่ม */
+.qtile .name{ font-weight:700; line-height:1.2; }
+.qtile .price{ font-weight:800; }
+.qtile .muted{ font-size:12px; color:var(--muted); }
+
+/* โทนสีแบบพาสเทล (กำหนดผ่าน data-color="green|blue|pink|amber|teal") */
+.qtile[data-color="green"]{ background:#ecfdf5; border-color:#bbf7d0; }
+.qtile[data-color="blue"] { background:#eff6ff; border-color:#bfdbfe; }
+.qtile[data-color="pink"] { background:#fdf2f8; border-color:#fbcfe8; }
+.qtile[data-color="amber"]{ background:#fffbeb; border-color:#fde68a; }
+.qtile[data-color="teal"] { background:#f0fdfa; border-color:#99f6e4; }
+
+/* จอเล็ก */
+
+  .quick-tiles {
+  margin-top:8px;
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));  /* 👈 แก้ 140 → 100 */
+  gap:16px;   /* ลดช่องว่างด้วย */
+}
+
+
+
+
+/* การ์ดปุ่มสินค้า — ขนาดเล็กลง กะทัดรัด */
+.qtile {
+  display:flex;
+  flex-direction:column;
+  gap:4px;                        /* เว้นระยะเล็กลง */
+  padding:8px 10px;                 /* 👈 ลด padding ลง */
+  border:1px solid var(--border);
+  border-radius:15px;              /* 👈 โค้งน้อยลง */
+  background:#ffffff;
+  color:var(--text);
+  box-shadow:0 4px 10px rgba(0,0,0,.04);
+  cursor:pointer;
+  transition:transform .05s ease, box-shadow .2s;
+}
+
+/* ชื่อสินค้า */
+.qtile .name {
+  font-weight:600;                /* 👈 เดิม 700 → ลดความหนา */
+  font-size:14px;                 /* 👈 ตัวเล็กลง */
+  line-height:1.3;
+}
+
+/* ข้อความแตะเพื่อเพิ่ม */
+.qtile .muted {
+  font-size:11px;                 /* 👈 เล็กลง */
+  color:var(--muted);
+}
+
+/* ราคา */
+.qtile .price {
+  font-weight:700;                /* 👈 เดิม 800 → ลดลง */
+  font-size:15px;                 /* 👈 กะทัดรัด */
+  color:#166534;
+}
