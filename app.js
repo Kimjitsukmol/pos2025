@@ -1911,7 +1911,7 @@ function addQuickTileEntry(name, price, color){
   list.unshift(entry);
   saveQuickTiles(list);
   renderQuickTiles();
-  toast('เพิ่มปุ่มสินค้าแล้ว');
+  // toast('เพิ่มปุ่มสินค้าแล้ว');
   return true;
 }
 
@@ -1927,8 +1927,8 @@ function renderQuickTiles(){
     card.type = 'button';
     card.setAttribute('data-color', ent.color || 'green');
     card.innerHTML = `
-      <div class="name">➕ ${escapeHTML(ent.name)}</div>
-      <div class="price">฿${Number(ent.price).toLocaleString('th-TH')}</div>
+      <div class="name"> ${escapeHTML(ent.name)}</div>
+      <div class="price">${Number(ent.price).toLocaleString('th-TH')} บาท</div>
     `;
 
     // ====== ใช้ Pointer Events เดียวจบ (แก้ปัญหา iPad ไม่ยิง click) ======
