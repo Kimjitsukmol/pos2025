@@ -848,3 +848,29 @@ button { padding: 10px 14px; }
   font-size:15px;                 /* 👈 กะทัดรัด */
   color:#166534;
 }
+
+/* ปุ่มเพิ่มสินค้าไม่มีบาร์โค้ด — ให้สไตล์เข้ากับปุ่ม actions */
+#add-quick-tile {
+  background:#eef8ff;         /* ฟ้าอ่อน เหมือน view-receipts */
+  border:1px solid #93c5fd;
+  color:#1d4ed8;
+  border-radius:12px;
+  padding:10px 14px;
+  font-weight:600;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  justify-content:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.04);
+  transition:transform .05s ease, box-shadow .2s;
+}
+#add-quick-tile:hover{
+  background:#e3f0ff;
+  box-shadow:0 6px 16px rgba(0,0,0,.08);
+}
+#add-quick-tile:active{ transform:translateY(1px); }
+
+.qtile{
+  touch-action: manipulation;   /* ลด delay แตะ/ดับเบิลแตะบน iOS */
+  user-select: none; -webkit-user-select: none;
+}

@@ -1927,37 +1927,45 @@ function renderQuickTiles(){
     card.type = 'button';
     card.setAttribute('data-color', ent.color || 'green');
     card.innerHTML = `
-      <div class="name">${escapeHTML(ent.name)}</div>
+      <div class="name">➕ ${escapeHTML(ent.name)}</div>
       <div class="price">฿${Number(ent.price).toLocaleString('th-TH')}</div>
     `;
 
-    // ====== กดค้าง 3 วินาที → เปิดแก้ไข/ลบ ======
+    // ====== ใช้ Pointer Events เดียวจบ (แก้ปัญหา iPad ไม่ยิง click) ======
+    const LONG_MS = 3000;   // กดค้าง 3 วิ = แก้ไข/ลบ
+    const MOVE_TOL = 12;    // อนุญาตขยับนิ้วเล็กน้อย
+
     let pressTimer = null;
     let longPressTriggered = false;
+    let downX = 0, downY = 0;
 
-    function startPress(e){
-      // กัน tap ซ้อนบนมือถือ
-      if (e.type === 'touchstart') e.preventDefault();
+    function clearTimer(){ if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } }
+
+    function onDown(e){
       longPressTriggered = false;
+      // จับ pointer เพื่อให้ up/cancel กลับมาที่ปุ่มนี้เสมอ
+      if (e.pointerId != null) { try { card.setPointerCapture(e.pointerId); } catch {} }
+      downX = e.clientX ?? 0;
+      downY = e.clientY ?? 0;
+
+      clearTimer();
       pressTimer = setTimeout(() => {
         longPressTriggered = true;
         openEditQuickTileModal(ent.id);   // 👉 เปิด modal แก้ไข/ลบ
-      }, 3000); // 3 วินาที
-    }
-    function cancelPress(){
-      if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+      }, LONG_MS);
     }
 
-    card.addEventListener('mousedown', startPress);
-    card.addEventListener('touchstart', startPress, { passive:false });
-    card.addEventListener('mouseup', cancelPress);
-    card.addEventListener('mouseleave', cancelPress);
-    card.addEventListener('touchend', cancelPress);
+    function onUp(e){
+      // ปล่อย pointer + ยกเลิกจับเวลา
+      if (e.pointerId != null) { try { card.releasePointerCapture(e.pointerId); } catch {} }
+      clearTimer();
 
-    // ====== คลิกสั้น → เพิ่มสินค้า ======
-    card.addEventListener('click', (e) => {
-      if (longPressTriggered) { e.preventDefault(); return; }
-      // เพิ่มลงตะกร้าแบบ code=null
+      // ถ้าเพิ่ง long-press ไปแล้ว หรือขยับไกลเกิน → ไม่ถือเป็นคลิกสั้น
+      const dx = Math.abs((e.clientX ?? 0) - downX);
+      const dy = Math.abs((e.clientY ?? 0) - downY);
+      if (longPressTriggered || dx > MOVE_TOL || dy > MOVE_TOL) return;
+
+      // 👉 คลิกสั้น = เพิ่มสินค้าเข้า cart
       let idx = cart.findIndex(l =>
         l.code === null &&
         l.name === ent.name &&
@@ -1970,15 +1978,29 @@ function renderQuickTiles(){
         idx = cart.length - 1;
       }
       if (typeof moveLineToFront === 'function') moveLineToFront(idx);
-      lastAddedKey = `price:${ent.price}`;   // key สำหรับไฮไลต์ล่าสุด
+      lastAddedKey = `price:${ent.price}`;
       renderCart?.();
       if (typeof animateAddToCartVisual === 'function') animateAddToCartVisual(`฿${ent.price}`);
       speakThai?.(`${ent.price} บาท`);
-    });
+    }
+
+    function onCancel(){
+      clearTimer();
+    }
+
+    // ผูกอีเวนต์เดียว รองรับทั้งเมาส์/ทัช/สไตลัส
+    card.addEventListener('pointerdown', onDown, { passive: true });
+    card.addEventListener('pointerup', onUp);
+    card.addEventListener('pointercancel', onCancel);
+    card.addEventListener('pointerleave', onCancel);
+
+    // กัน double-trigger จาก click เดิม (เชิงป้องกัน)
+    card.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
 
     quickTilesWrap.appendChild(card);
   });
 }
+
 
 
 // ปุ่ม “+ เพิ่มปุ่มสินค้า”
