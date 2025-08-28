@@ -904,3 +904,39 @@ button { padding: 10px 14px; }
 .cart .edit-btn:hover{
   background:#f8fafc;
 }
+
+
+
+/* = โหมด Soft (แนะนำ): เส้นทึบ 1px สีอ่อน โปร่งนิดๆ = */
+.cart { border-collapse: separate; border-spacing: 0; }
+.cart th, .cart td { border: none; }
+
+:root{
+  --divider-soft: #cbd5e1;   /* เทาอ่อน */
+}
+
+/* แถวสินค้า */
+.cart tbody tr { position: relative; }
+.cart tbody tr:not(:last-child)::after{
+  content:"";
+  position:absolute; left:0; right:0; bottom:0;
+  height:1px;
+  background: var(--divider-soft);
+  opacity:.55;                 /* 👈 ลดความชัด */
+  pointer-events:none;
+}
+
+/* เส้นใต้หัวตารางให้แมตช์กัน */
+.cart thead tr{ position:relative; }
+.cart thead tr::after{
+  content:"";
+  position:absolute; left:0; right:0; bottom:0;
+  height:1px;
+  background: var(--divider-soft);
+  opacity:.6;                  /* หัวตารางชัดกว่าแถวเล็กน้อย */
+}
+
+/* Hover เบามาก (กันแสบตา) */
+#cart-body tr:hover { background: rgba(203,213,225,.10); }
+
+

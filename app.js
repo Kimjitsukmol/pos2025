@@ -693,7 +693,12 @@ function renderCart() {
   const { sub } = calcTotals();
   const subtotalEl = document.getElementById('subtotal');
   if (subtotalEl) subtotalEl.textContent = sub.toLocaleString('th-TH');
-   updateShrinkUI();
+
+  const itemCountEl = document.getElementById('item-count');
+  if (itemCountEl) itemCountEl.textContent = `${totalItems} รายการ`;
+
+
+  updateShrinkUI();
   applyLastAddedHighlight();
 }
 
