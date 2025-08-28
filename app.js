@@ -29,6 +29,25 @@ const cashEl     = el('cash');
 const changeEl   = el('change');
 
 
+// ให้ tbody เป็นตัวรับคลิกของปุ่ม +/− เพียงครั้งเดียว
+if (cartBody && !cartBody._qtyBound) {
+  cartBody.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+
+    if (btn.classList.contains('btn-inc')) {
+      changeQty(Number(btn.dataset.idx), 1);
+    } else if (btn.classList.contains('btn-dec')) {
+      changeQty(Number(btn.dataset.idx), -1);
+    }
+  }, { passive: true });
+  cartBody._qtyBound = true; // กันผูกซ้ำตอน render ใหม่
+}
+
+
+
+
+
 // คลิกแถว = ลบ, คลิกปุ่มดินสอ = แก้ไข
 if (cartBody) {
   // คลิกเดี่ยว: ปุ่มดินสอ = เปิดแก้ไข (คงพฤติกรรมเดิม)
@@ -119,7 +138,7 @@ function openEditModal(idx){
   if (line.code) {
     updateProductOnSheet(line.code, name, price)
       .then(ok => {
-        if (ok) toast('บันทึกขึ้นชีตแล้ว');
+        if (ok) toast('');
         else    toast('บันทึกขึ้นชีตไม่สำเร็จ (แก้ในตะกร้าแล้ว)');
       })
       .catch(() => toast('บันทึกขึ้นชีตไม่สำเร็จ (แก้ในตะกร้าแล้ว)'));
@@ -650,44 +669,37 @@ function renderCart() {
 
     const tr = document.createElement('tr');
     tr.title = 'ดับเบิลคลิกเพื่อลบ';
-tr.innerHTML = `
-  <td>${it.code ?? '-'}</td>
-  <td>${it.name}</td>
-  <td class="num">${format(it.price)}</td>
-  <td class="num">
-    <div class="qty">
-      <button onclick="changeQty(${idx}, -1)">-</button>
-      <span>${it.qty}</span>
-      <button onclick="changeQty(${idx}, 1)">+</button>
-    </div>
-  </td>
-  <td class="num">${format(it.price * it.qty)}</td>
-
-  <!-- ปุ่มแก้ไข (ไอคอนดินสอ) -->
-  <td>
-    <button class="icon-btn edit-btn" data-idx="${idx}" title="แก้ไขรายการ">
-      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 
-                 7.04a1.003 1.003 0 000-1.42l-2.34-2.34a1.003 1.003 0 00-1.42 
-                 0l-1.83 1.83 3.75 3.75 1.84-1.82z" fill="currentColor"/>
-      </svg>
-    </button>
-  </td>
-`;
-cartBody.appendChild(tr);
-
+    tr.innerHTML = `
+      <td class="name-cell">
+        <div class="name">${escapeHTML(it.name || '')}</div>
+        ${it.code ? `<div class="meta">รหัส: ${escapeHTML(it.code)}</div>` : ''}
+      </td>
+      <td class="num">${format(it.price)}</td>
+      <td class="num">
+        <div class="qty">
+          <button class="btn-dec" data-idx="${idx}" aria-label="ลดจำนวน">−</button>
+          <span>${it.qty}</span>
+          <button class="btn-inc" data-idx="${idx}" aria-label="เพิ่มจำนวน">+</button>
+        </div>
+      </td>
+      <td class="num">${format(it.price * it.qty)}</td>
+    `;
+    // ดับเบิลคลิกแถวเพื่อลบรายการ (เหมือนเดิม)
+    tr.addEventListener('dblclick', () => removeLine(idx));
+    cartBody.appendChild(tr);
   });
 
+  // อัปเดตรวมต่าง ๆ (ฟังก์ชันเดิมของคุณ)
   const { sub } = calcTotals();
-  if (subtotalEl) subtotalEl.textContent = format(sub);
-
-  // ⭐ เพิ่มบรรทัดนี้: อัปเดตจำนวนสินค้า
-  const itemCountEl = document.getElementById('item-count');
-  if (itemCountEl) itemCountEl.textContent = `${totalItems} รายการ`;
-
-  updateShrinkUI();
+  const subtotalEl = document.getElementById('subtotal');
+  if (subtotalEl) subtotalEl.textContent = sub.toLocaleString('th-TH');
+   updateShrinkUI();
   applyLastAddedHighlight();
 }
+
+
+ 
+
 
 
 function clearCart() {
@@ -756,7 +768,7 @@ function holdBillMulti() {
     // เคลียร์ทันทีตามที่ต้องการ
     clearCart();
     renderCart?.();
-    toast('พักบิล');
+    // toast('พักบิล');
   } catch (e) {
     console.error('[holdBillMulti] error:', e);
     toast('พักบิลไม่สำเร็จ');
@@ -1679,7 +1691,9 @@ function addAndSaveNewProduct({ code, name, price }) {
 
     // บันทึกขึ้นชีตแบบ background เหมือนเดิม
     saveProductRow({ code, name, price: Number(price)||0 })
-      .then(ok => { if (ok) toast('บันทึกสินค้าแล้ว'); else toast('บันทึกสินค้าล้มเหลว'); })
+      .then(ok => { 
+        if (ok) toast(''); 
+        else toast('บันทึกสินค้าล้มเหลว'); })
       .catch(()=> toast('บันทึกสินค้าล้มเหลว'));
   } catch (e) {
     console.error('เพิ่มสินค้าใหม่ไม่สำเร็จ:', e);
@@ -2130,7 +2144,7 @@ function openEditQuickTileModal(id){
 
     saveQuickTiles(list);
     renderQuickTiles();
-    toast('แก้ไขปุ่มแล้ว');
+    // toast('แก้ไขปุ่มแล้ว');
     close();
   });
 }

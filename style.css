@@ -874,3 +874,33 @@ button { padding: 10px 14px; }
   touch-action: manipulation;   /* ลด delay แตะ/ดับเบิลแตะบน iOS */
   user-select: none; -webkit-user-select: none;
 }
+
+
+
+
+/* ให้ช่องชื่อสินค้าเป็นแถวเดียว วางชื่อซ้าย-ปุ่มแก้ไขขวา */
+.cart td.name-cell{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+
+.cart td.name-cell .name{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  padding-right:6px;
+}
+
+/* ปุ่มดินสอแบบกะทัดรัด กลมมน */
+.cart .edit-btn{
+  padding:6px 8px;
+  border:1px solid #e5e7eb;
+  background:#fff;
+  border-radius:8px;
+  cursor:pointer;
+}
+.cart .edit-btn:hover{
+  background:#f8fafc;
+}
