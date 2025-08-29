@@ -28,6 +28,14 @@ const subtotalEl = el('subtotal');
 const cashEl     = el('cash');
 const changeEl   = el('change');
 
+if (cashEl) {
+  cashEl.addEventListener('focus', updateEmptyCartVisual);
+  cashEl.addEventListener('blur',  updateEmptyCartVisual);
+  // (ออปชั่น) ขณะพิมพ์ก็อัปเดตไปด้วย
+  cashEl.addEventListener('input', updateEmptyCartVisual);
+}
+
+
 
 // ให้ tbody เป็นตัวรับคลิกของปุ่ม +/− เพียงครั้งเดียว
 if (cartBody && !cartBody._qtyBound) {
@@ -229,6 +237,9 @@ const qrWrap   = document.getElementById('qr-pay-wrap');
 const qrAmtEl  = document.getElementById('qr-amt');
 const qrImg    = document.getElementById('qr-img');
 const qrCountEl = document.getElementById('qr-count');
+
+
+
 
 
 const cashInput =
@@ -700,6 +711,8 @@ function renderCart() {
 
   updateShrinkUI();
   applyLastAddedHighlight();
+  updateEmptyCartVisual();
+
 }
 
 
@@ -2153,3 +2166,40 @@ function openEditQuickTileModal(id){
     close();
   });
 }
+
+
+
+
+function updateEmptyCartVisual() {
+  const qrWrap = document.getElementById('qr-pay-wrap');      // กล่อง QR
+  const emptyWrap = document.getElementById('empty-cart-wrap'); // ภาพตะกร้าว่าง
+  const cash = document.getElementById('cash');
+
+  if (!qrWrap || !emptyWrap || !cash) return;
+
+  const hasItems = Array.isArray(cart) && cart.some(l => (l?.qty || 0) > 0);
+  const cashFocused = document.activeElement === cash;
+
+  // เงื่อนไข:
+  // 1) โฟกัสที่ช่องรับเงิน  → แสดง QR, ซ่อนภาพว่าง
+  if (cashFocused) {
+    qrWrap.classList.add('show');
+    qrWrap.classList.remove('hidden');
+    emptyWrap.classList.add('hidden');
+    return;
+  }
+
+  // 2) ยังไม่โฟกัสช่องรับเงิน:
+  //    - ถ้า "ไม่มีสินค้า" → แสดงภาพว่าง
+  //    - ถ้ามีสินค้าแล้ว → ซ่อนทั้งสองอย่าง (จนกว่าจะโฟกัส cash)
+  qrWrap.classList.remove('show');
+  qrWrap.classList.add('hidden');
+
+  if (!hasItems) {
+    emptyWrap.classList.remove('hidden');
+  } else {
+    emptyWrap.classList.add('hidden');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', updateEmptyCartVisual);
