@@ -952,3 +952,34 @@ button { padding: 10px 14px; }
 .edit-btn:hover {
   background: #bae6fd;
 }
+
+
+/* จับลากได้จากคอลัมน์ชื่อสินค้า */
+.cart td.name-cell { cursor: grab; }
+.cart td.name-cell:active { cursor: grabbing; }
+
+/* เอฟเฟกต์ขณะลาก */
+.drag-ghost    { opacity: .6; }
+.drag-chosen   { outline: 2px solid #93c5fd; background: #eef6ff; }
+.drag-dragging { transform: scale(1.01); }
+
+
+/* ให้ทั้งแถวรู้สึกว่าลากได้ */
+#cart-body tr { cursor: grab; }
+#cart-body tr:active { cursor: grabbing; }
+
+/* เอฟเฟกต์ขณะลาก */
+.drag-ghost  { opacity: .6; }
+.drag-chosen { outline: 2px solid #93c5fd; background: #eef6ff; }
+.drag-dragging { transform: scale(1.01); }
+
+
+
+/* ให้กล่องดู “ลากได้” */
+.qtile { cursor: grab; }
+.qtile:active { cursor: grabbing; }
+
+/* เอฟเฟกต์ขณะลาก (คลาสมาตรฐานของ Sortable) */
+.drag-ghost  { opacity: .6; }
+.drag-chosen { outline: 2px solid #93c5fd; background:#eef6ff; }
+.drag-dragging { transform: scale(1.01); }

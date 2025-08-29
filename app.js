@@ -28,6 +28,17 @@ const subtotalEl = el('subtotal');
 const cashEl     = el('cash');
 const changeEl   = el('change');
 
+
+// === toggle โซนปุ่มสินค้าที่ไม่มีบาร์โค้ด (Quick Tiles) ตามสถานะตะกร้า ===
+const quickTilesEl = document.getElementById('quick-tiles');
+function toggleQuickTilesByCart() {
+  if (!quickTilesEl) return;
+  const hasItems = Array.isArray(cart) && cart.length > 0;
+  quickTilesEl.classList.toggle('hidden', hasItems); // มีของ -> ซ่อน / ว่าง -> โชว์
+}
+
+
+
 if (cashEl) {
   cashEl.addEventListener('focus', updateEmptyCartVisual);
   cashEl.addEventListener('blur',  updateEmptyCartVisual);
@@ -715,6 +726,7 @@ function renderCart() {
   updateShrinkUI();
   applyLastAddedHighlight();
   updateEmptyCartVisual();
+  toggleQuickTilesByCart();
 
 }
 
@@ -1031,6 +1043,7 @@ el('view-receipts')?.addEventListener('click', openReceiptCenter);
 
 // ====== เริ่มต้น ======
 preloadProducts().then(() => renderCart());
+
 
 // ====== เตรียมข้อมูลสำหรับบันทึก ======
 function buildSalePayload() {
@@ -2036,6 +2049,43 @@ function renderQuickTiles(){
   });
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+  const wrap = document.getElementById('quick-tiles');
+  if (!wrap) return;
+
+  // มี SortableJS ไหม
+  if (typeof Sortable === 'undefined') return;
+
+  // ผูกครั้งเดียวพอ
+  if (!wrap._sortableBound) {
+    new Sortable(wrap, {
+      animation: 150,
+      draggable: '.qtile',          // 👉 ให้ "กล่อง" เป็น item ที่ลาก
+      handle: '.qtile',             // 👉 จับที่กล่องได้ทั้งใบ
+      forceFallback: true,
+      fallbackTolerance: 3,
+      delay: 120,                   // 👉 กันเผลอจิ้มแล้วลากบนมือถือ
+      delayOnTouchOnly: true,
+      onEnd(evt) {
+        // อัปเดตลำดับใน localStorage ให้ตรงกับตำแหน่งใหม่
+        const list = loadQuickTiles();     // มีอยู่แล้วในไฟล์คุณ
+        if (!Array.isArray(list) || !list.length) return;
+        const moved = list.splice(evt.oldIndex, 1)[0];
+        list.splice(evt.newIndex, 0, moved);
+        saveQuickTiles(list);              // มีอยู่แล้วในไฟล์คุณ
+        renderQuickTiles();                // วาดใหม่ตามลำดับล่าสุด
+      }
+    });
+    wrap._sortableBound = true;
+  }
+});
+
+
+
+
+
+
+
 
 
 // ปุ่ม “+ เพิ่มปุ่มสินค้า”
@@ -2206,3 +2256,7 @@ function updateEmptyCartVisual() {
 }
 
 document.addEventListener('DOMContentLoaded', updateEmptyCartVisual);
+
+document.addEventListener('DOMContentLoaded', () => {
+  toggleQuickTilesByCart();   // ✅ ให้เช็คสถานะตั้งแต่โหลดหน้า
+});
