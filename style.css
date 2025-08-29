@@ -940,3 +940,15 @@ button { padding: 10px 14px; }
 #cart-body tr:hover { background: rgba(203,213,225,.10); }
 
 
+.edit-btn {
+  background: #e0f2fe;
+  border: 1px solid #60a5fa;
+  border-radius: 6px;
+  padding: 2px 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #0369a1;
+}
+.edit-btn:hover {
+  background: #bae6fd;
+}

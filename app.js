@@ -681,20 +681,23 @@ function renderCart() {
     const tr = document.createElement('tr');
     tr.title = 'ดับเบิลคลิกเพื่อลบ';
     tr.innerHTML = `
-      <td class="name-cell">
-        <div class="name">${escapeHTML(it.name || '')}</div>
-        ${it.code ? `<div class="meta">รหัส: ${escapeHTML(it.code)}</div>` : ''}
-      </td>
-      <td class="num">${format(it.price)}</td>
-      <td class="num">
-        <div class="qty">
-          <button class="btn-dec" data-idx="${idx}" aria-label="ลดจำนวน">−</button>
-          <span>${it.qty}</span>
-          <button class="btn-inc" data-idx="${idx}" aria-label="เพิ่มจำนวน">+</button>
-        </div>
-      </td>
-      <td class="num">${format(it.price * it.qty)}</td>
-    `;
+  <td class="name-cell">
+    <div class="name">${escapeHTML(it.name || '')}</div>
+  </td>
+  <td class="num">${format(it.price)}</td>
+  <td class="num">
+    <div class="qty">
+      <button class="btn-dec" data-idx="${idx}" aria-label="ลดจำนวน">−</button>
+      <span>${it.qty}</span>
+      <button class="btn-inc" data-idx="${idx}" aria-label="เพิ่มจำนวน">+</button>
+    </div>
+  </td>
+  <td class="num">${format(it.price * it.qty)}</td>
+  <td class="num">
+    <button class="edit-btn" data-idx="${idx}" title="แก้ไขสินค้า">✎</button>
+  </td>
+`;
+
     // ดับเบิลคลิกแถวเพื่อลบรายการ (เหมือนเดิม)
     tr.addEventListener('dblclick', () => removeLine(idx));
     cartBody.appendChild(tr);
